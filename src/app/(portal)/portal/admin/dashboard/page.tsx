@@ -4,6 +4,7 @@ export default function AdminDashboardPage() {
   return (
     <section>
       <PageHeader
+        eyebrow="Administration"
         title="Admin Dashboard"
         description="Management tools for users, verification, and platform operations."
       />

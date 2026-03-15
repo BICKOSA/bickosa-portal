@@ -1,33 +1,190 @@
-import Link from "next/link";
+"use client";
 
-const portalLinks = [
-  { href: "/portal/dashboard", label: "Dashboard" },
-  { href: "/portal/admin/dashboard", label: "Admin" },
-  { href: "/events-preview", label: "Events" },
-  { href: "/about", label: "About" },
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  CalendarCheck2,
+  FileText,
+  Handshake,
+  HeartHandshake,
+  LayoutGrid,
+  Settings,
+  Trophy,
+  UserCircle2,
+  Users,
+} from "lucide-react";
+
+import { Avatar } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+
+type SidebarUser = {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+  emailVerified?: boolean;
+};
+
+type NavItem = {
+  label: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  badge?: string;
+};
+
+const navGroups: Array<{ label: string; items: NavItem[] }> = [
+  {
+    label: "Overview",
+    items: [{ label: "Dashboard", href: "/portal/dashboard", icon: LayoutGrid }],
+  },
+  {
+    label: "Community",
+    items: [
+      { label: "Alumni Directory", href: "/portal/directory", icon: Users },
+      { label: "Mentorship", href: "/portal/mentorship", icon: Handshake },
+    ],
+  },
+  {
+    label: "Engage",
+    items: [
+      { label: "Events & RSVPs", href: "/portal/events", icon: CalendarCheck2 },
+      { label: "Sports League", href: "/portal/sports", icon: Trophy, badge: "Soon" },
+    ],
+  },
+  {
+    label: "Give Back",
+    items: [{ label: "Donate", href: "/portal/donate", icon: HeartHandshake, badge: "Live" }],
+  },
+  {
+    label: "My Account",
+    items: [
+      { label: "My Profile", href: "/portal/profile", icon: UserCircle2 },
+      { label: "Settings", href: "/portal/settings", icon: Settings },
+    ],
+  },
+  {
+    label: "About",
+    items: [{ label: "Governance & Docs", href: "/portal/governance", icon: FileText }],
+  },
 ];
 
-export function Sidebar() {
-  return (
-    <aside className="min-h-screen w-64 bg-[var(--navy-900)] px-4 py-6 text-[var(--white)]">
-      <div className="mb-8 border-l-4 border-[var(--gold-500)] pl-3">
-        <p className="text-sm uppercase tracking-wide text-[var(--gold-200)]">
-          BICKOSA
-        </p>
-        <h1 className="text-xl font-semibold text-[var(--white)]">Portal</h1>
-      </div>
+const mobileNavItems: NavItem[] = [
+  { label: "Dashboard", href: "/portal/dashboard", icon: LayoutGrid },
+  { label: "Directory", href: "/portal/directory", icon: Users },
+  { label: "Events", href: "/portal/events", icon: CalendarCheck2 },
+  { label: "Donate", href: "/portal/donate", icon: HeartHandshake },
+  { label: "Profile", href: "/portal/profile", icon: UserCircle2 },
+];
 
-      <nav className="space-y-2">
-        {portalLinks.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            className="block rounded-[var(--r-md)] px-3 py-2 text-sm text-[var(--navy-100)] transition-colors hover:bg-[var(--navy-700)] hover:text-[var(--white)]"
-          >
-            {link.label}
+function isActivePath(pathname: string, href: string): boolean {
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+export function Sidebar({ user }: { user: SidebarUser }) {
+  const pathname = usePathname();
+  const memberName = user.name?.trim() || "BICKOSA Member";
+
+  return (
+    <>
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[252px] flex-col border-r border-[color:rgba(255,255,255,0.08)] bg-[var(--navy-900)] text-[var(--white)] lg:flex">
+        <div className="border-b border-[color:rgba(255,255,255,0.08)] px-5 py-5">
+          <Link href="/portal/dashboard" className="flex items-start gap-3">
+            <div className="inline-flex size-8 items-center justify-center rounded-[10px] bg-[var(--navy-700)] font-[var(--font-ui)] text-sm font-bold text-[var(--gold-500)]">
+              B
+            </div>
+            <div className="min-w-0">
+              <p className="font-[var(--font-ui)] text-[1.05rem] font-semibold leading-tight text-[var(--white)]">
+                BICKOSA
+              </p>
+              <p className="mt-0.5 text-[10px] uppercase tracking-[0.16em] text-[var(--navy-300)]">
+                Alumni Portal
+              </p>
+            </div>
           </Link>
-        ))}
+
+          <div className="mt-4 rounded-[var(--r-lg)] border border-[color:rgba(255,255,255,0.12)] bg-[color:rgba(255,255,255,0.04)] p-3">
+            <div className="flex items-center gap-3">
+              <Avatar
+                size="md"
+                src={user.image}
+                name={memberName}
+                className="border-[color:rgba(255,255,255,0.24)] bg-[var(--navy-700)] text-[var(--white)]"
+              />
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-[var(--white)]">{memberName}</p>
+                <p className="text-xs text-[var(--navy-300)]">Class of ----</p>
+              </div>
+            </div>
+            <Badge variant="gold" size="sm" className="mt-3 h-5 px-2 text-[10px] uppercase tracking-wide">
+              Verified
+            </Badge>
+          </div>
+        </div>
+
+        <nav className="flex-1 overflow-y-auto px-3 py-4">
+          {navGroups.map((group) => (
+            <div key={group.label} className="mb-5">
+              <p className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--navy-400)]">
+                {group.label}
+              </p>
+              <div className="space-y-1">
+                {group.items.map((item) => {
+                  const active = isActivePath(pathname, item.href);
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={cn(
+                        "flex items-center gap-2.5 rounded-[var(--r-md)] border-l-2 border-transparent px-3 py-2 text-sm transition-colors",
+                        active
+                          ? "border-[var(--gold-500)] bg-[color:rgba(255,255,255,0.08)] text-[var(--white)]"
+                          : "text-[var(--navy-200)] hover:border-[color:rgba(201,168,76,0.65)] hover:bg-[color:rgba(255,255,255,0.05)] hover:text-[var(--white)]",
+                      )}
+                    >
+                      <Icon className="size-4 shrink-0" />
+                      <span className="truncate">{item.label}</span>
+                      {item.badge ? (
+                        <span className="ml-auto rounded-full bg-[var(--gold-500)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--navy-900)]">
+                          {item.badge}
+                        </span>
+                      ) : null}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </nav>
+
+        <footer className="border-t border-[color:rgba(255,255,255,0.08)] px-5 py-4 text-xs text-[var(--navy-300)]">
+          <p>BCK SSS · Luzira, Kampala</p>
+          <Link href="/privacy-policy" className="mt-1 inline-block hover:text-[var(--white)]">
+            Privacy Policy
+          </Link>
+        </footer>
+      </aside>
+
+      <nav className="fixed inset-x-0 bottom-0 z-40 grid h-16 grid-cols-5 border-t border-[color:rgba(255,255,255,0.12)] bg-[color:rgba(13,27,62,0.98)] px-1 lg:hidden">
+        {mobileNavItems.map((item) => {
+          const active = isActivePath(pathname, item.href);
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "flex flex-col items-center justify-center gap-1 rounded-[var(--r-md)] text-[10px] font-medium",
+                active ? "text-[var(--gold-500)]" : "text-[var(--navy-200)]",
+              )}
+            >
+              <Icon className={cn("size-4", active ? "text-[var(--gold-500)]" : "text-[var(--white)]")} />
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
       </nav>
-    </aside>
+    </>
   );
 }
