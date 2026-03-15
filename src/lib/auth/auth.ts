@@ -6,6 +6,11 @@ import { dash } from "@better-auth/infra";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 import {
+  ADMIN_APP_ROLES,
+  DEFAULT_APP_USER_ROLE,
+  appUserRoleSchema,
+} from "@/lib/auth/roles";
+import {
   sendPasswordResetEmail,
   sendVerificationEmail,
 } from "@/lib/email/resend";
@@ -90,8 +95,8 @@ export const auth = betterAuth({
   },
   plugins: [
     admin({
-      defaultRole: "member",
-      adminRoles: ["admin"],
+      defaultRole: appUserRoleSchema.parse(DEFAULT_APP_USER_ROLE),
+      adminRoles: [...ADMIN_APP_ROLES],
     }),
     dash({
       apiKey: process.env.BETTER_AUTH_API_KEY,

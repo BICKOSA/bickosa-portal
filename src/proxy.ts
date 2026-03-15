@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth/auth";
+import { isAdminUserRole } from "@/lib/auth/roles";
 
 const PUBLIC_PATHS = new Set([
   "/",
@@ -42,7 +43,7 @@ export async function proxy(request: NextRequest) {
 
   if (pathname.startsWith("/portal/admin")) {
     const role = (session.user as { role?: string }).role;
-    if (role !== "admin") {
+    if (!isAdminUserRole(role)) {
       return NextResponse.redirect(new URL("/portal/dashboard", request.url));
     }
   }
