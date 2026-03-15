@@ -6,9 +6,6 @@ import { isAdminUserRole } from "@/lib/auth/roles";
 
 const PUBLIC_PATHS = new Set([
   "/",
-  "/about",
-  "/events",
-  "/donate",
   "/login",
   "/register",
   "/verify-email",
