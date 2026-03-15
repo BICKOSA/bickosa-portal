@@ -1,60 +1,97 @@
-"use client"
+"use client";
 
-import { Button as ButtonPrimitive } from "@base-ui/react/button"
-import { cva, type VariantProps } from "class-variance-authority"
+import * as React from "react";
+import { LoaderCircle } from "lucide-react";
+import { cva, type VariantProps } from "class-variance-authority";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[var(--r-md)] border text-sm font-semibold font-[var(--font-ui)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--navy-400)] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-60",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground [a]:hover:bg-primary/80",
-        outline:
-          "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+        default:
+          "border-[var(--navy-900)] bg-[var(--navy-900)] text-[var(--white)] hover:bg-[var(--navy-700)]",
+        navy:
+          "border-[var(--navy-900)] bg-[var(--navy-900)] text-[var(--white)] hover:bg-[var(--navy-700)]",
+        gold: "border-[var(--gold-500)] bg-[var(--gold-500)] text-[var(--navy-900)] hover:bg-[var(--gold-400)]",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80 aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
-        ghost:
-          "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
-        destructive:
-          "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
-        link: "text-primary underline-offset-4 hover:underline",
+          "border-[var(--navy-100)] bg-[var(--navy-50)] text-[var(--navy-700)] hover:bg-[var(--navy-100)]",
+        outline:
+          "border-[var(--border)] bg-[var(--white)] text-[var(--text-1)] hover:bg-[var(--navy-50)]",
+        "outline-light":
+          "border-[color:rgba(255,255,255,0.35)] bg-transparent text-[var(--white)] hover:bg-[color:rgba(255,255,255,0.12)]",
+        ghost: "border-transparent bg-transparent text-[var(--text-1)] hover:bg-[var(--navy-50)]",
+        link: "border-transparent bg-transparent p-0 text-[var(--navy-700)] underline-offset-4 hover:underline",
       },
       size: {
-        default:
-          "h-8 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
-        xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
-        sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
-        lg: "h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-3 has-data-[icon=inline-start]:pl-3",
-        icon: "size-8",
-        "icon-xs":
-          "size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",
-        "icon-sm":
-          "size-7 rounded-[min(var(--radius-md),12px)] in-data-[slot=button-group]:rounded-lg",
-        "icon-lg": "size-9",
+        sm: "h-9 px-3 text-xs",
+        md: "h-10 px-4 text-sm",
+        lg: "h-12 px-5 text-base",
+        icon: "size-10 p-0",
+        "icon-sm": "size-8 p-0",
+        "icon-xs": "size-7 p-0",
+        "icon-lg": "size-12 p-0",
+        default: "h-10 px-4 text-sm",
       },
     },
     defaultVariants: {
-      variant: "default",
-      size: "default",
+      variant: "navy",
+      size: "md",
     },
-  }
-)
+  },
+);
+
+type ButtonProps = Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "size"> &
+  VariantProps<typeof buttonVariants> & {
+    isLoading?: boolean;
+    asChild?: boolean;
+  };
 
 function Button({
   className,
-  variant = "default",
-  size = "default",
+  variant,
+  size,
+  isLoading = false,
+  asChild = false,
+  children,
+  disabled,
   ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+}: ButtonProps) {
+  const buttonClassName = cn(buttonVariants({ variant, size, className }));
+  if (asChild && React.isValidElement(children)) {
+    const child = children as React.ReactElement<{
+      className?: string;
+      children?: React.ReactNode;
+      "aria-busy"?: boolean;
+    }>;
+
+    return React.cloneElement(child, {
+      className: cn(buttonClassName, child.props.className),
+      "aria-busy": isLoading || undefined,
+      children: (
+        <>
+          {isLoading ? (
+            <LoaderCircle className="size-4 animate-spin" aria-hidden />
+          ) : null}
+          {child.props.children}
+        </>
+      ),
+    });
+  }
+
   return (
-    <ButtonPrimitive
-      data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
+    <button
+      className={buttonClassName}
+      disabled={disabled || isLoading}
+      aria-busy={isLoading || undefined}
       {...props}
-    />
-  )
+    >
+      {isLoading ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : null}
+      {children}
+    </button>
+  );
 }
 
-export { Button, buttonVariants }
+export { Button, type ButtonProps, buttonVariants };
