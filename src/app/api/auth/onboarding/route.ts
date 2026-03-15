@@ -22,6 +22,15 @@ const onboardingSchema = z
     industry: z.string().min(1),
     locationCity: z.string().min(1),
     locationCountry: z.string().min(1),
+    phone: z
+      .union([
+        z.literal(""),
+        z
+          .string()
+          .trim()
+          .regex(/^\+?[0-9()\-\s]{7,20}$/),
+      ])
+      .optional(),
     consent: z.object({
       dataProcessing: z.boolean(),
       directory: z.boolean(),
@@ -70,6 +79,7 @@ export async function POST(request: Request) {
           industry: payload.industry,
           locationCity: payload.locationCity,
           locationCountry: payload.locationCountry,
+          phone: payload.phone || null,
           verificationStatus: "pending",
           membershipTier: "standard",
           isAvailableForMentorship: false,
@@ -87,6 +97,7 @@ export async function POST(request: Request) {
             industry: payload.industry,
             locationCity: payload.locationCity,
             locationCountry: payload.locationCountry,
+            phone: payload.phone || null,
             verificationStatus: "pending",
             updatedAt: now,
           },

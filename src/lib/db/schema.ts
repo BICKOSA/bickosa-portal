@@ -237,6 +237,7 @@ export const alumniProfiles = pgTable("alumni_profiles", {
   industry: varchar("industry", { length: 120 }),
   locationCity: varchar("location_city", { length: 120 }),
   locationCountry: varchar("location_country", { length: 120 }),
+  phone: varchar("phone", { length: 32 }),
   bio: text("bio"),
   linkedinUrl: text("linkedin_url"),
   websiteUrl: text("website_url"),

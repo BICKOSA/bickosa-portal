@@ -38,7 +38,7 @@ export default async function PortalLayout({ children }: PortalLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-(--surface) text-(--text-1)">
+    <div className="min-h-screen bg-[var(--surface)] text-[var(--text-1)]">
       <Sidebar user={user} />
       <div className="flex min-h-screen flex-col lg:pl-[252px]">
         <Topbar user={user} />

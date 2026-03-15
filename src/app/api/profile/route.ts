@@ -20,6 +20,18 @@ const profilePatchSchema = z
     industry: z.string().trim().min(1).optional(),
     locationCity: z.string().trim().min(1).optional(),
     locationCountry: z.string().trim().min(1).optional(),
+    phone: z
+      .union([
+        z.literal(""),
+        z
+          .string()
+          .trim()
+          .regex(
+            /^\+?[0-9()\-\s]{7,20}$/,
+            "Enter a valid phone number.",
+          ),
+      ])
+      .optional(),
     bio: z.string().trim().max(280).optional(),
     linkedinUrl: z.union([z.literal(""), z.url()]).optional(),
     websiteUrl: z.union([z.literal(""), z.url()]).optional(),
@@ -62,6 +74,7 @@ async function getProfileView(userId: string): Promise<ProfileViewData | null> {
       industry: alumniProfiles.industry,
       locationCity: alumniProfiles.locationCity,
       locationCountry: alumniProfiles.locationCountry,
+      phone: alumniProfiles.phone,
       bio: alumniProfiles.bio,
       linkedinUrl: alumniProfiles.linkedinUrl,
       websiteUrl: alumniProfiles.websiteUrl,
@@ -91,6 +104,7 @@ async function getProfileView(userId: string): Promise<ProfileViewData | null> {
     industry: row.industry,
     locationCity: row.locationCity,
     locationCountry: row.locationCountry,
+    phone: row.phone,
     bio: row.bio,
     linkedinUrl: row.linkedinUrl,
     websiteUrl: row.websiteUrl,
@@ -133,6 +147,7 @@ export async function PATCH(request: Request) {
         industry: payload.industry ?? null,
         locationCity: payload.locationCity ?? null,
         locationCountry: payload.locationCountry ?? null,
+        phone: payload.phone || null,
         bio: payload.bio ?? null,
         linkedinUrl: payload.linkedinUrl || null,
         websiteUrl: payload.websiteUrl || null,
@@ -151,6 +166,8 @@ export async function PATCH(request: Request) {
           industry: payload.industry ?? existingProfile.industry,
           locationCity: payload.locationCity ?? existingProfile.locationCity,
           locationCountry: payload.locationCountry ?? existingProfile.locationCountry,
+          phone:
+            payload.phone !== undefined ? payload.phone || null : existingProfile.phone,
           bio: payload.bio ?? existingProfile.bio,
           linkedinUrl:
             payload.linkedinUrl !== undefined

@@ -295,6 +295,7 @@ export async function getDirectoryProfileById(params: {
       chapterName: chapters.name,
       currentJobTitle: alumniProfiles.currentJobTitle,
       currentEmployer: alumniProfiles.currentEmployer,
+      phone: alumniProfiles.phone,
       avatarKey: alumniProfiles.avatarKey,
       email: users.email,
       showInDirectory: privacySettings.showInDirectory,
@@ -337,8 +338,7 @@ export async function getDirectoryProfileById(params: {
     currentJobTitle: row.currentJobTitle,
     currentEmployer: showEmployer ? row.currentEmployer : null,
     email: showEmail ? row.email : null,
-    // Phone data is not currently stored in the schema.
-    phone: showPhone ? "Not provided" : null,
+    phone: showPhone ? row.phone : null,
     isAvailableForMentorship: row.isAvailableForMentorship,
   };
 }

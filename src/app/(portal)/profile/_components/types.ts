@@ -15,6 +15,7 @@ export type ProfileViewData = {
   industry: string | null;
   locationCity: string | null;
   locationCountry: string | null;
+  phone: string | null;
   bio: string | null;
   linkedinUrl: string | null;
   websiteUrl: string | null;

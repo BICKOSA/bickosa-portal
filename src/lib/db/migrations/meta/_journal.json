@@ -22,6 +22,13 @@
       "when": 1773541882641,
       "tag": "0002_lucky_night_nurse",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1773581000000,
+      "tag": "0003_soft_ultragirl",
+      "breakpoints": true
     }
   ]
 }

@@ -33,6 +33,13 @@ const profileSchema = z
     industry: z.string().trim().min(1, "Select an industry."),
     locationCity: z.string().trim().min(1, "City is required."),
     locationCountry: z.string().trim().min(1, "Country is required."),
+    phone: z.union([
+      z.literal(""),
+      z
+        .string()
+        .trim()
+        .regex(/^\+?[0-9()\-\s]{7,20}$/, "Enter a valid phone number."),
+    ]),
     bio: z.string().trim().max(280, "Bio must be 280 characters or less.").optional(),
     linkedinUrl: z.union([z.literal(""), z.url("Enter a valid LinkedIn URL.")]),
     websiteUrl: z.union([z.literal(""), z.url("Enter a valid website URL.")]),
@@ -64,6 +71,7 @@ function toFormDefaults(profile: ProfileViewData): PersonalInfoValues {
     industry: profile.industry ?? "",
     locationCity: profile.locationCity ?? "",
     locationCountry: profile.locationCountry ?? "Uganda",
+    phone: profile.phone ?? "",
     bio: profile.bio ?? "",
     linkedinUrl: profile.linkedinUrl ?? "",
     websiteUrl: profile.websiteUrl ?? "",
@@ -200,6 +208,13 @@ export function PersonalInfoForm({ profile, onProfileUpdated }: PersonalInfoForm
               error={errors.locationCountry?.message}
             />
           </div>
+
+          <Input
+            label="Phone number"
+            placeholder="+256 7XX XXX XXX"
+            {...register("phone")}
+            error={errors.phone?.message}
+          />
 
           <Textarea
             label="Bio"
