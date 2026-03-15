@@ -8,6 +8,20 @@
       "when": 1773539706231,
       "tag": "0000_clever_kitty_pryde",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1773541600192,
+      "tag": "0001_harsh_firestar",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1773541882641,
+      "tag": "0002_lucky_night_nurse",
+      "breakpoints": true
     }
   ]
 }

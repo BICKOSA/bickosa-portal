@@ -1,7 +1,8 @@
 import Link from "next/link";
 
 const portalLinks = [
-  { href: "/portal", label: "Dashboard" },
+  { href: "/portal/dashboard", label: "Dashboard" },
+  { href: "/portal/admin/dashboard", label: "Admin" },
   { href: "/events-preview", label: "Events" },
   { href: "/about", label: "About" },
 ];
