@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+:root {
+  --navy-950: #060d1f;
+  --navy-900: #0d1b3e;
+  --navy-800: #152347;
+  --navy-700: #1a3060;
+  --navy-600: #1e3d7a;
+  --navy-500: #254c97;
+  --navy-400: #3d64b0;
+  --navy-300: #6589c8;
+  --navy-200: #a3b8de;
+  --navy-100: #d4dff0;
+  --navy-50: #edf1f8;
+  --gold-500: #c9a84c;
+  --gold-400: #d4b86a;
+  --gold-300: #e2cd96;
+  --gold-200: #efddb8;
+  --gold-100: #f7efd8;
+  --gold-50: #fdf8ed;
+  --gold-800: #6b4500;
+  --white: #ffffff;
+  --surface: #f7f8fc;
+  --surface-2: #f0f3fb;
+  --border: #e4e8f2;
+  --border-2: #d4daf0;
+  --text-1: #0d1b3e;
+  --text-2: #3a4868;
+  --text-3: #6b7a99;
+  --text-4: #9ba8c4;
+  --success: #1a6b3c;
+  --success-bg: #dcf0e6;
+  --error: #b91c1c;
+  --error-bg: #fee2e2;
+  --font-ui: "Google Sans", "Product Sans", Arial, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  --r-sm: 4px;
+  --r-md: 8px;
+  --r-lg: 12px;
+  --r-xl: 16px;
+  --r-full: 9999px;
+  --shadow-sm: 0 1px 3px rgba(13, 27, 62, 0.06);
+  --shadow-md: 0 4px 12px rgba(13, 27, 62, 0.09);
+  --shadow-lg: 0 8px 24px rgba(13, 27, 62, 0.12);
+}
+
+@theme inline {
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-mono);
+}
+
+body {
+  background-color: var(--surface);
+  color: var(--text-1);
+  font-family: var(--font-body);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-ui);
+}
+
+* {
+  border-color: var(--border);
+}
