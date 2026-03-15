@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -89,10 +90,15 @@ export function Sidebar({ user }: { user: SidebarUser }) {
     <>
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-[252px] flex-col border-r border-[color:rgba(255,255,255,0.08)] bg-[var(--navy-900)] text-[var(--white)] lg:flex">
         <div className="border-b border-[color:rgba(255,255,255,0.08)] px-5 py-5">
-          <Link href="/portal/dashboard" className="flex items-start gap-3">
-            <div className="inline-flex size-8 items-center justify-center rounded-[10px] bg-[var(--navy-700)] font-[var(--font-ui)] text-sm font-bold text-[var(--gold-500)]">
-              B
-            </div>
+          <Link href="/portal/dashboard" className="flex items-center gap-3">
+            <Image
+              src="/logo.png"
+              alt="BICKOSA"
+              width={40}
+              height={40}
+              className="size-10 shrink-0 object-contain"
+              priority
+            />
             <div className="min-w-0">
               <p className="font-[var(--font-ui)] text-[1.05rem] font-semibold leading-tight text-[var(--white)]">
                 BICKOSA
