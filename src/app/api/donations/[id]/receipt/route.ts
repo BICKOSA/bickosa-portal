@@ -6,14 +6,14 @@ import { auth } from "@/lib/auth/auth";
 import { isAdminUserRole } from "@/lib/auth/roles";
 import { db } from "@/lib/db";
 import { donations } from "@/lib/db/schema";
-import { getDonationReceiptData } from "@/lib/donations";
+import { generateDonationReceiptPdf, getDonationReceiptData } from "@/lib/donations";
 import { sendDonationReceiptEmail } from "@/lib/email/resend";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
 };
 
-export async function GET(_request: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext) {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -62,9 +62,24 @@ export async function GET(_request: Request, context: RouteContext) {
     })
     .where(and(eq(donations.id, id), eq(donations.paymentStatus, "completed")));
 
-  return NextResponse.json({
-    receipt,
-    delivered: Boolean(receipt.donorEmail),
-    note: "PDF receipt generation is TODO. Returning structured receipt data for now.",
+  const url = new URL(request.url);
+  const format = url.searchParams.get("format") ?? "pdf";
+
+  if (format === "json") {
+    return NextResponse.json({
+      receipt,
+      delivered: Boolean(receipt.donorEmail),
+      note: "Pass ?format=pdf (or omit format) to download the PDF receipt.",
+    });
+  }
+
+  const pdfBytes = await generateDonationReceiptPdf(receipt);
+  return new NextResponse(Buffer.from(pdfBytes), {
+    status: 200,
+    headers: {
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `inline; filename="donation-receipt-${receipt.referenceNumber}.pdf"`,
+      "Cache-Control": "no-store",
+    },
   });
 }

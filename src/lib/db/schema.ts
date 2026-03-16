@@ -430,6 +430,24 @@ export const donations = pgTable("donations", {
     .notNull(),
 });
 
+export const campaignUpdates = pgTable("campaign_updates", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  campaignId: uuid("campaign_id")
+    .notNull()
+    .references(() => campaigns.id, { onDelete: "cascade" }),
+  authorId: uuid("author_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  title: varchar("title", { length: 255 }).notNull(),
+  body: text("body").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
 export const sportsSeasons = pgTable("sports_seasons", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
@@ -620,6 +638,8 @@ export type Campaign = InferSelectModel<typeof campaigns>;
 export type NewCampaign = InferInsertModel<typeof campaigns>;
 export type Donation = InferSelectModel<typeof donations>;
 export type NewDonation = InferInsertModel<typeof donations>;
+export type CampaignUpdate = InferSelectModel<typeof campaignUpdates>;
+export type NewCampaignUpdate = InferInsertModel<typeof campaignUpdates>;
 export type SportsSeason = InferSelectModel<typeof sportsSeasons>;
 export type NewSportsSeason = InferInsertModel<typeof sportsSeasons>;
 export type SportsTeam = InferSelectModel<typeof sportsTeams>;

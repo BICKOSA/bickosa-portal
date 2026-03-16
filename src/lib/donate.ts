@@ -3,6 +3,7 @@ import { and, desc, eq, gte, ilike, lte, or, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
   alumniProfiles,
+  campaignUpdates,
   campaigns,
   donations,
   privacySettings,
@@ -65,6 +66,8 @@ export type CampaignDetailData = CampaignSummary & {
     title: string;
     body: string;
     createdAt: Date;
+    updatedAt: Date;
+    authorName: string | null;
   }>;
   recentDonations: RecentDonationItem[];
   daysRemaining: number | null;
@@ -323,6 +326,21 @@ export async function getCampaignBySlug(slug: string): Promise<CampaignDetailDat
       ? null
       : Math.max(0, Math.ceil((campaign.endDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000)));
 
+  const updatesRows = await db
+    .select({
+      id: campaignUpdates.id,
+      title: campaignUpdates.title,
+      body: campaignUpdates.body,
+      createdAt: campaignUpdates.createdAt,
+      updatedAt: campaignUpdates.updatedAt,
+      authorName: users.name,
+    })
+    .from(campaignUpdates)
+    .leftJoin(users, eq(users.id, campaignUpdates.authorId))
+    .where(eq(campaignUpdates.campaignId, campaign.id))
+    .orderBy(desc(campaignUpdates.createdAt))
+    .limit(30);
+
   return {
     id: campaign.id,
     title: campaign.title,
@@ -341,7 +359,7 @@ export async function getCampaignBySlug(slug: string): Promise<CampaignDetailDat
     startDate: campaign.startDate,
     projectType: campaign.projectType,
     currency: campaign.currency,
-    updates: [],
+    updates: updatesRows,
     recentDonations,
     daysRemaining,
   };

@@ -4,8 +4,8 @@ import { notFound, redirect } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
+import { CampaignUpdatesPanel } from "@/app/(portal)/portal/donate/[slug]/_components/campaign-updates-panel";
 import { DonationModal } from "@/components/portal/donation-modal";
-import { Button } from "@/components/ui/button";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { auth } from "@/lib/auth/auth";
 import { isAdminUserRole } from "@/lib/auth/roles";
@@ -144,21 +144,18 @@ export default async function CampaignDetailPage({ params }: CampaignDetailPageP
           </section>
 
           <section className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--white)] p-5 shadow-[var(--shadow-sm)]">
-            <div className="flex items-center justify-between gap-2">
-              <h2 className="font-[var(--font-ui)] text-xl font-semibold text-[var(--navy-900)]">
-                Campaign updates
-              </h2>
-              {canPostUpdates ? (
-                <Button type="button" size="sm" variant="outline" disabled>
-                  Post update (soon)
-                </Button>
-              ) : null}
-            </div>
+            <h2 className="font-[var(--font-ui)] text-xl font-semibold text-[var(--navy-900)]">
+              Campaign updates
+            </h2>
             <p className="mt-2 text-sm text-[var(--text-2)]">
               Updates from campaign administrators will appear here as progress milestones are posted.
             </p>
-            <div className="mt-3 rounded-[var(--r-md)] border border-dashed border-[var(--border-2)] bg-[var(--surface)] p-3 text-sm text-[var(--text-3)]">
-              No updates yet.
+            <div className="mt-3">
+              <CampaignUpdatesPanel
+                campaignId={campaign.id}
+                canManage={canPostUpdates}
+                initialUpdates={campaign.updates}
+              />
             </div>
           </section>
         </div>

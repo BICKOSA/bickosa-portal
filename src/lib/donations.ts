@@ -1,4 +1,5 @@
 import { and, eq, sql } from "drizzle-orm";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
 import { sendDonationReceiptEmail } from "@/lib/email/resend";
 import { db } from "@/lib/db";
@@ -144,4 +145,82 @@ export async function completeDonationAndSendReceipt(params: {
     .where(eq(donations.id, completion.receipt.donationId));
 
   return completion;
+}
+
+export async function generateDonationReceiptPdf(receipt: DonationReceiptData): Promise<Uint8Array> {
+  const document = await PDFDocument.create();
+  const page = document.addPage([595, 842]); // A4
+
+  const titleFont = await document.embedFont(StandardFonts.HelveticaBold);
+  const bodyFont = await document.embedFont(StandardFonts.Helvetica);
+
+  let y = 790;
+  page.drawText("BICKOSA Alumni Portal", {
+    x: 50,
+    y,
+    size: 12,
+    font: bodyFont,
+    color: rgb(0.1, 0.18, 0.38),
+  });
+
+  y -= 30;
+  page.drawText("Donation Receipt", {
+    x: 50,
+    y,
+    size: 24,
+    font: titleFont,
+    color: rgb(0.05, 0.1, 0.24),
+  });
+
+  y -= 28;
+  page.drawText(`Reference: ${receipt.referenceNumber}`, {
+    x: 50,
+    y,
+    size: 11,
+    font: bodyFont,
+    color: rgb(0.25, 0.3, 0.41),
+  });
+
+  y -= 50;
+  const rows: Array<[string, string]> = [
+    ["Donor", receipt.donorName],
+    ["Campaign", receipt.campaignName],
+    ["Amount", receipt.amountLabel],
+    ["Date", receipt.donatedOn],
+    ["Donation ID", receipt.donationId],
+  ];
+
+  for (const [label, value] of rows) {
+    page.drawText(label, {
+      x: 50,
+      y,
+      size: 11,
+      font: titleFont,
+      color: rgb(0.2, 0.25, 0.34),
+    });
+    page.drawText(value, {
+      x: 170,
+      y,
+      size: 11,
+      font: bodyFont,
+      color: rgb(0.12, 0.16, 0.25),
+    });
+    y -= 24;
+  }
+
+  y -= 16;
+  page.drawText(
+    "Thank you for supporting BICKOSA community initiatives. Keep this receipt for your records.",
+    {
+      x: 50,
+      y,
+      size: 10,
+      font: bodyFont,
+      color: rgb(0.25, 0.3, 0.41),
+      maxWidth: 495,
+      lineHeight: 14,
+    },
+  );
+
+  return document.save();
 }
