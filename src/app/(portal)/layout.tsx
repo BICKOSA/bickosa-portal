@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
+import { ToastProvider } from "@/components/ui/toast";
 import { auth } from "@/lib/auth/auth";
 
 type PortalLayoutProps = {
@@ -38,12 +39,14 @@ export default async function PortalLayout({ children }: PortalLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--surface)] text-[var(--text-1)]">
-      <Sidebar user={user} />
-      <div className="flex min-h-screen flex-col lg:pl-[252px]">
-        <Topbar user={user} />
-        <main className="flex-1 px-4 py-6 pb-24 sm:px-6 lg:px-8 lg:pb-8">{children}</main>
+    <ToastProvider>
+      <div className="min-h-screen bg-[var(--surface)] text-[var(--text-1)]">
+        <Sidebar user={user} />
+        <div className="flex min-h-screen flex-col lg:pl-[252px]">
+          <Topbar user={user} />
+          <main className="flex-1 px-4 py-6 pb-24 sm:px-6 lg:px-8 lg:pb-8">{children}</main>
+        </div>
       </div>
-    </div>
+    </ToastProvider>
   );
 }
