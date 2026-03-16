@@ -17,8 +17,22 @@ function VerifyEmailPageContent() {
   const [message, setMessage] = useState<string | null>(null);
 
   const token = useMemo(() => searchParams.get("token"), [searchParams]);
+  const error = useMemo(() => searchParams.get("error"), [searchParams]);
+  const verified = useMemo(() => searchParams.get("verified"), [searchParams]);
 
   useEffect(() => {
+    if (verified === "true") {
+      setState("verified");
+      setMessage("Email verified successfully. You can now sign in.");
+      return;
+    }
+
+    if (error) {
+      setState("error");
+      setMessage("Verification link is invalid or expired.");
+      return;
+    }
+
     let cancelled = false;
 
     const verifyToken = async () => {
@@ -48,7 +62,7 @@ function VerifyEmailPageContent() {
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [error, token, verified]);
 
   const resendVerificationEmail = async () => {
     if (!email) {
@@ -57,10 +71,15 @@ function VerifyEmailPageContent() {
     }
 
     setMessage(null);
+    const callbackURL =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/verify-email?verified=true`
+        : "/verify-email?verified=true";
+
     const response = await fetch("/api/auth/send-verification-email", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ email, callbackURL: "/verify-email" }),
+      body: JSON.stringify({ email, callbackURL }),
     });
 
     if (response.ok) {

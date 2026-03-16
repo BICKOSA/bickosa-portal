@@ -124,8 +124,8 @@ export default function RegisterPage() {
 
     const callbackURL =
       typeof window !== "undefined"
-        ? `${window.location.origin}/verify-email`
-        : "/verify-email";
+        ? `${window.location.origin}/verify-email?verified=true`
+        : "/verify-email?verified=true";
 
     const signUpResponse = await fetch("/api/auth/sign-up/email", {
       method: "POST",
