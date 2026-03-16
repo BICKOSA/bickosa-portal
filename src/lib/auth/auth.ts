@@ -22,53 +22,27 @@ export const auth = betterAuth({
   appName,
   baseURL: appUrl,
   trustedOrigins: appUrl ? [appUrl] : [],
+  advanced: {
+    database: {
+      generateId: "uuid",
+    },
+  },
   database: drizzleAdapter(db, {
     provider: "pg",
     schema,
   }),
   session: {
     modelName: "sessions",
-    fields: {
-      userId: "userId",
-      expiresAt: "expiresAt",
-      ipAddress: "ipAddress",
-      userAgent: "userAgent",
-      createdAt: "createdAt",
-      updatedAt: "updatedAt",
-    },
-    // BetterAuth uses 24h when rememberMe is false.
     expiresIn: 60 * 60 * 24 * 30,
   },
   user: {
     modelName: "users",
-    fields: {
-      emailVerified: "emailVerified",
-      createdAt: "createdAt",
-      updatedAt: "updatedAt",
-    },
   },
   account: {
     modelName: "accounts",
-    fields: {
-      userId: "userId",
-      accountId: "accountId",
-      providerId: "providerId",
-      accessToken: "accessToken",
-      refreshToken: "refreshToken",
-      idToken: "idToken",
-      accessTokenExpiresAt: "accessTokenExpiresAt",
-      refreshTokenExpiresAt: "refreshTokenExpiresAt",
-      createdAt: "createdAt",
-      updatedAt: "updatedAt",
-    },
   },
   verification: {
     modelName: "verifications",
-    fields: {
-      expiresAt: "expiresAt",
-      createdAt: "createdAt",
-      updatedAt: "updatedAt",
-    },
   },
   emailAndPassword: {
     enabled: true,
