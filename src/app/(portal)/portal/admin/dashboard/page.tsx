@@ -10,7 +10,7 @@ export default function AdminDashboardPage() {
       />
       <div className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--white)] p-6 shadow-[var(--shadow-sm)]">
         <p className="text-sm text-[var(--text-2)]">
-          Admin controls will be added here. Use this route to validate `/portal/admin/*` guard
+          Admin controls will be added here. Use this route to validate `/admin/*` guard
           behavior.
         </p>
       </div>

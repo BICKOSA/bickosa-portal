@@ -104,7 +104,7 @@ export type SendWelcomeEmailInput = {
 };
 
 export function sendWelcomeEmail(input: SendWelcomeEmailInput) {
-  const profileUrl = input.profileUrl ?? `${appUrl}/portal/profile`;
+  const profileUrl = input.profileUrl ?? `${appUrl}/profile`;
 
   return sendEmail({
     to: input.to,
@@ -127,7 +127,7 @@ export type SendVerificationApprovedEmailInput = {
 };
 
 export function sendVerificationApprovedEmail(input: SendVerificationApprovedEmailInput) {
-  const portalUrl = input.portalUrl ?? `${appUrl}/portal/dashboard`;
+  const portalUrl = input.portalUrl ?? `${appUrl}/dashboard`;
 
   return sendEmail({
     to: input.to,
@@ -268,7 +268,7 @@ export type SendNewsletterEmailInput = {
 };
 
 export function sendNewsletterEmail(input: SendNewsletterEmailInput) {
-  const portalUrl = input.portalUrl ?? `${appUrl}/portal/dashboard`;
+  const portalUrl = input.portalUrl ?? `${appUrl}/dashboard`;
 
   return sendEmail({
     to: input.to,

@@ -13,7 +13,7 @@ export default async function RootPage() {
   });
 
   if (session) {
-    redirect("/portal/dashboard");
+    redirect("/dashboard");
   }
 
   redirect("/login");

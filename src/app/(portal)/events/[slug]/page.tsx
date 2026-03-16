@@ -244,7 +244,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                 event.relatedEvents.map((related) => (
                   <Link
                     key={related.id}
-                    href={`/portal/events/${related.slug}`}
+                    href={`/events/${related.slug}`}
                     className="block rounded-[var(--r-md)] border border-[var(--border)] p-3 hover:bg-[var(--surface)]"
                   >
                     <p className="font-[var(--font-ui)] text-sm font-semibold text-[var(--text-1)]">

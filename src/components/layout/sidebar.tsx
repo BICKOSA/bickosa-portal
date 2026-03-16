@@ -37,45 +37,45 @@ type NavItem = {
 const navGroups: Array<{ label: string; items: NavItem[] }> = [
   {
     label: "Overview",
-    items: [{ label: "Dashboard", href: "/portal/dashboard", icon: LayoutGrid }],
+    items: [{ label: "Dashboard", href: "/dashboard", icon: LayoutGrid }],
   },
   {
     label: "Community",
     items: [
-      { label: "Alumni Directory", href: "/portal/directory", icon: Users },
-      { label: "Mentorship", href: "/portal/mentorship", icon: Handshake },
+      { label: "Alumni Directory", href: "/directory", icon: Users },
+      { label: "Mentorship", href: "/mentorship", icon: Handshake },
     ],
   },
   {
     label: "Engage",
     items: [
-      { label: "Events & RSVPs", href: "/portal/events", icon: CalendarCheck2 },
-      { label: "Sports League", href: "/portal/sports", icon: Trophy, badge: "Soon" },
+      { label: "Events & RSVPs", href: "/events", icon: CalendarCheck2 },
+      { label: "Sports League", href: "/sports", icon: Trophy, badge: "Soon" },
     ],
   },
   {
     label: "Give Back",
-    items: [{ label: "Donate", href: "/portal/donate", icon: HeartHandshake, badge: "Live" }],
+    items: [{ label: "Donate", href: "/donate", icon: HeartHandshake, badge: "Live" }],
   },
   {
     label: "My Account",
     items: [
-      { label: "My Profile", href: "/portal/profile", icon: UserCircle2 },
-      { label: "Settings", href: "/portal/settings", icon: Settings },
+      { label: "My Profile", href: "/profile", icon: UserCircle2 },
+      { label: "Settings", href: "/settings", icon: Settings },
     ],
   },
   {
     label: "About",
-    items: [{ label: "Governance & Docs", href: "/portal/governance", icon: FileText }],
+    items: [{ label: "Governance & Docs", href: "/governance", icon: FileText }],
   },
 ];
 
 const mobileNavItems: NavItem[] = [
-  { label: "Dashboard", href: "/portal/dashboard", icon: LayoutGrid },
-  { label: "Directory", href: "/portal/directory", icon: Users },
-  { label: "Events", href: "/portal/events", icon: CalendarCheck2 },
-  { label: "Donate", href: "/portal/donate", icon: HeartHandshake },
-  { label: "Profile", href: "/portal/profile", icon: UserCircle2 },
+  { label: "Dashboard", href: "/dashboard", icon: LayoutGrid },
+  { label: "Directory", href: "/directory", icon: Users },
+  { label: "Events", href: "/events", icon: CalendarCheck2 },
+  { label: "Donate", href: "/donate", icon: HeartHandshake },
+  { label: "Profile", href: "/profile", icon: UserCircle2 },
 ];
 
 function isActivePath(pathname: string, href: string): boolean {
@@ -90,7 +90,7 @@ export function Sidebar({ user }: { user: SidebarUser }) {
     <>
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-[252px] flex-col border-r border-[color:rgba(255,255,255,0.08)] bg-[var(--navy-900)] text-[var(--white)] lg:flex">
         <div className="border-b border-[color:rgba(255,255,255,0.08)] px-5 py-5">
-          <Link href="/portal/dashboard" className="flex items-center gap-3">
+          <Link href="/dashboard" className="flex items-center gap-3">
             <Image
               src="/logo.png"
               alt="BICKOSA"

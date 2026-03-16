@@ -14,17 +14,17 @@ type TopbarUser = {
 };
 
 const titleMatchers: Array<{ match: string; title: string }> = [
-  { match: "/portal/dashboard", title: "Dashboard" },
-  { match: "/portal/directory", title: "Alumni Directory" },
-  { match: "/portal/mentorship", title: "Mentorship" },
-  { match: "/portal/events", title: "Events & RSVPs" },
-  { match: "/portal/sports", title: "Sports League" },
-  { match: "/portal/donate", title: "Donate" },
-  { match: "/portal/profile", title: "My Profile" },
-  { match: "/portal/settings", title: "Settings" },
-  { match: "/portal/governance", title: "Governance & Docs" },
-  { match: "/portal/admin/dashboard", title: "Admin Dashboard" },
-  { match: "/portal/admin", title: "Admin" },
+  { match: "/dashboard", title: "Dashboard" },
+  { match: "/directory", title: "Alumni Directory" },
+  { match: "/mentorship", title: "Mentorship" },
+  { match: "/events", title: "Events & RSVPs" },
+  { match: "/sports", title: "Sports League" },
+  { match: "/donate", title: "Donate" },
+  { match: "/profile", title: "My Profile" },
+  { match: "/settings", title: "Settings" },
+  { match: "/governance", title: "Governance & Docs" },
+  { match: "/admin/dashboard", title: "Admin Dashboard" },
+  { match: "/admin", title: "Admin" },
 ];
 
 function getPageTitle(pathname: string): string {
@@ -76,7 +76,7 @@ export function Topbar({ user }: { user: TopbarUser }) {
         </button>
 
         <Link
-          href="/portal/profile"
+          href="/profile"
           aria-label="My profile"
           className={cn(
             "inline-flex rounded-full ring-offset-2 transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--navy-400)]",

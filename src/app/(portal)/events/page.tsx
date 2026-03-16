@@ -45,7 +45,7 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
       <div className="inline-flex w-fit items-center gap-1 rounded-[var(--r-full)] bg-[var(--surface-2)] p-1">
         {(Object.keys(TAB_LABELS) as Array<keyof typeof TAB_LABELS>).map((tab) => {
           const isActive = query.tab === tab;
-          const href = tab === "upcoming" ? "/portal/events" : `/portal/events?tab=${tab}`;
+          const href = tab === "upcoming" ? "/events" : `/events?tab=${tab}`;
           return (
             <Link
               key={tab}

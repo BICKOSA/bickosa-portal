@@ -59,7 +59,7 @@ function EventCard({ event }: { event: EventCardData }) {
       <div className="space-y-3 p-4">
         <div className="space-y-1">
           <h3 className="line-clamp-2 font-[var(--font-ui)] text-lg font-semibold text-[var(--navy-900)]">
-            <Link href={`/portal/events/${event.slug}`} className="hover:text-[var(--navy-700)]">
+            <Link href={`/events/${event.slug}`} className="hover:text-[var(--navy-700)]">
               {event.title}
             </Link>
           </h3>

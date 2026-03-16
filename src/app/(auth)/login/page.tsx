@@ -20,6 +20,15 @@ const loginSchema = z.object({
 
 type LoginValues = z.infer<typeof loginSchema>;
 
+function normalizeReturnTo(returnTo: string | null): string {
+  if (!returnTo || !returnTo.startsWith("/") || returnTo.startsWith("//")) {
+    return "/dashboard";
+  }
+
+  const normalized = returnTo.replace(/^\/portal(?=\/|$)/, "");
+  return normalized || "/dashboard";
+}
+
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -63,7 +72,7 @@ function LoginPageContent() {
       return;
     }
 
-    const returnTo = searchParams.get("returnTo") || "/portal/dashboard";
+    const returnTo = normalizeReturnTo(searchParams.get("returnTo"));
     router.push(returnTo);
   };
 

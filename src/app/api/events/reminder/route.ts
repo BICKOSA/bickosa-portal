@@ -69,7 +69,7 @@ export async function POST(request: Request) {
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://portal.bickosa.org";
-  const eventDetailsUrl = `${appUrl.replace(/\/$/, "")}/portal/events/${event.slug}`;
+  const eventDetailsUrl = `${appUrl.replace(/\/$/, "")}/events/${event.slug}`;
   const location = getEventCalendarLocation(event);
 
   const googleCalendarUrl = buildGoogleCalendarUrl({

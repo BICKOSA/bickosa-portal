@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 
 import { AuthPageShell } from "@/components/auth/auth-page-shell";
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 type VerifyState = "pending" | "verifying" | "verified" | "error";
 
 function VerifyEmailPageContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState(searchParams.get("email") ?? "");
   const [state, setState] = useState<VerifyState>("pending");
@@ -22,8 +23,31 @@ function VerifyEmailPageContent() {
 
   useEffect(() => {
     if (verified === "true") {
-      setState("verified");
-      setMessage("Email verified successfully. You can now sign in.");
+      setState("verifying");
+      setMessage("Email verified. Redirecting to your portal...");
+
+      const redirectIfSignedIn = async () => {
+        const sessionResponse = await fetch("/api/auth/get-session");
+        if (!sessionResponse.ok) {
+          setState("verified");
+          setMessage("Email verified successfully. You can now sign in.");
+          return;
+        }
+
+        const payload = (await sessionResponse.json().catch(() => null)) as
+          | { user?: unknown }
+          | null;
+
+        if (payload?.user) {
+          router.replace("/dashboard");
+          return;
+        }
+
+        setState("verified");
+        setMessage("Email verified successfully. You can now sign in.");
+      };
+
+      void redirectIfSignedIn();
       return;
     }
 
@@ -62,7 +86,7 @@ function VerifyEmailPageContent() {
     return () => {
       cancelled = true;
     };
-  }, [error, token, verified]);
+  }, [error, router, token, verified]);
 
   const resendVerificationEmail = async () => {
     if (!email) {

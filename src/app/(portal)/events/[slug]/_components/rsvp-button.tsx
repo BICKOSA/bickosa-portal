@@ -144,7 +144,7 @@ export function RsvpButton({ event, compact = false }: RsvpButtonProps) {
 
   function downloadIcs() {
     const location = getEventCalendarLocation(event);
-    const sourceUrl = `${window.location.origin}/portal/events/${event.slug}`;
+    const sourceUrl = `${window.location.origin}/events/${event.slug}`;
     const content = buildIcsContent({
       eventId: event.id,
       title: event.title,

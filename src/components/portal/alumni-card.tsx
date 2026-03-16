@@ -67,7 +67,7 @@ export function AlumniCard({ alumnus }: AlumniCardProps) {
           Message
         </Button>
         <Button asChild variant="ghost" size="sm" className="flex-1">
-          <Link href={`/portal/directory/${alumnus.id}`}>View Profile</Link>
+          <Link href={`/directory/${alumnus.id}`}>View Profile</Link>
         </Button>
       </div>
     </article>

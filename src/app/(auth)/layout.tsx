@@ -17,7 +17,7 @@ export default async function AuthLayout({ children }: AuthLayoutProps) {
   });
 
   if (session) {
-    redirect("/portal/dashboard");
+    redirect("/dashboard");
   }
 
   return <>{children}</>;
