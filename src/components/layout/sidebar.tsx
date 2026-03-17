@@ -2,16 +2,18 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   ShieldCheck,
   BarChart3,
   BriefcaseBusiness,
   CalendarCheck2,
+  EllipsisVertical,
   FileText,
   Handshake,
   HeartHandshake,
   LayoutGrid,
+  LogOut,
   Settings,
   Trophy,
   UserCircle2,
@@ -21,6 +23,15 @@ import {
 
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import {
   Sidebar as DashboardSidebar,
@@ -34,6 +45,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  useSidebar,
 } from "@/components/ui/sidebar";
 
 type SidebarUser = {
@@ -122,15 +134,85 @@ function isActivePath(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+function SidebarNavUser({ user }: { user: SidebarUser }) {
+  const { isMobile } = useSidebar();
+  const router = useRouter();
+  const memberName = user.name?.trim() || "BICKOSA Member";
+
+  return (
+    <SidebarMenu>
+      <SidebarMenuItem>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <SidebarMenuButton
+                size="lg"
+                className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              />
+            }
+          >
+              <Avatar
+                size="sm"
+                src={user.image}
+                name={memberName}
+                className="border-sidebar-accent"
+              />
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-medium">{memberName}</span>
+                <span className="truncate text-xs text-sidebar-foreground/60">
+                  {user.email ?? "Member"}
+                </span>
+              </div>
+              <EllipsisVertical className="ml-auto size-4 text-sidebar-foreground/60" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            className="min-w-56 rounded-lg"
+            side={isMobile ? "bottom" : "right"}
+            align="end"
+            sideOffset={4}
+          >
+            <DropdownMenuLabel className="p-0 font-normal">
+              <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                <Avatar size="sm" src={user.image} name={memberName} />
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-medium">{memberName}</span>
+                  <span className="truncate text-xs text-muted-foreground">
+                    {user.email ?? "Member"}
+                  </span>
+                </div>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuItem onSelect={() => router.push("/profile")}>
+                <UserCircle2 />
+                My Profile
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => router.push("/settings")}>
+                <Settings />
+                Settings
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={() => router.push("/api/auth/sign-out")}>
+              <LogOut />
+              Sign out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </SidebarMenuItem>
+    </SidebarMenu>
+  );
+}
+
 export function Sidebar({ user }: { user: SidebarUser }) {
   const pathname = usePathname();
-  const memberName = user.name?.trim() || "BICKOSA Member";
   const isAdmin = user.role === "admin";
   const navGroups = isAdmin ? [...baseNavGroups, adminNavGroup] : baseNavGroups;
 
   return (
     <DashboardSidebar collapsible="offcanvas">
-      <SidebarHeader className="border-b border-[var(--border)] px-2 py-3">
+      <SidebarHeader className="border-b border-sidebar-border px-2 py-3">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" render={<Link href="/dashboard" />}>
@@ -143,10 +225,10 @@ export function Sidebar({ user }: { user: SidebarUser }) {
                 priority
               />
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold text-[var(--navy-900)]">
+                <span className="truncate font-semibold text-sidebar-foreground">
                   BICKOSA
                 </span>
-                <span className="truncate text-xs text-[var(--text-3)]">
+                <span className="truncate text-xs text-sidebar-foreground/60">
                   Alumni Portal
                 </span>
               </div>
@@ -158,7 +240,7 @@ export function Sidebar({ user }: { user: SidebarUser }) {
       <SidebarContent className="gap-1 px-2 py-3">
         {navGroups.map((group) => (
           <SidebarGroup key={group.label} className="p-0">
-            <SidebarGroupLabel className="px-2 text-[10px] tracking-[0.14em] uppercase">
+            <SidebarGroupLabel className="px-2 text-[10px] tracking-[0.14em] uppercase text-sidebar-foreground/40">
               {group.label}
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -173,8 +255,9 @@ export function Sidebar({ user }: { user: SidebarUser }) {
                         tooltip={item.label}
                         render={<Link href={item.href} />}
                         className={cn(
-                          "h-9 text-[13px]",
-                          active ? "bg-[var(--navy-50)] text-[var(--navy-900)]" : "",
+                          "h-9 text-[13px] text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                          active &&
+                            "border-l-2 border-l-(--gold-500) bg-sidebar-accent text-sidebar-accent-foreground font-medium",
                         )}
                       >
                         <Icon className="size-4" />
@@ -183,7 +266,11 @@ export function Sidebar({ user }: { user: SidebarUser }) {
                           <Badge
                             variant={item.badge === "Live" ? "gold" : "outline"}
                             size="sm"
-                            className="ml-auto h-5 px-1.5 text-[10px]"
+                            className={cn(
+                              "ml-auto h-5 px-1.5 text-[10px]",
+                              item.badge !== "Live" &&
+                                "border-sidebar-foreground/20 text-sidebar-foreground/60",
+                            )}
                           >
                             {item.badge}
                           </Badge>
@@ -198,29 +285,15 @@ export function Sidebar({ user }: { user: SidebarUser }) {
         ))}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-[var(--border)] px-2 py-3">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" render={<Link href="/profile" />}>
-              <Avatar size="sm" src={user.image} name={memberName} />
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{memberName}</span>
-                <span className="truncate text-xs text-[var(--text-3)]">
-                  {user.email ?? "Member"}
-                </span>
-              </div>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          {isAdmin ? (
-            <SidebarMenuItem>
-              <div className="px-2">
-                <Badge variant="outline" size="sm" className="h-5 px-2 text-[10px]">
-                  ADMIN
-                </Badge>
-              </div>
-            </SidebarMenuItem>
-          ) : null}
-        </SidebarMenu>
+      <SidebarFooter className="border-t border-sidebar-border px-2 py-3">
+        <SidebarNavUser user={user} />
+        {isAdmin ? (
+          <div className="px-2 pt-1">
+            <Badge variant="gold" size="sm" className="h-5 px-2 text-[10px]">
+              ADMIN
+            </Badge>
+          </div>
+        ) : null}
       </SidebarFooter>
       <SidebarRail />
     </DashboardSidebar>

@@ -89,13 +89,24 @@ export default async function PortalLayout({ children }: PortalLayoutProps) {
   return (
     <ToastProvider>
       <QueryProvider>
-        <SidebarProvider>
+        <SidebarProvider
+          style={
+            {
+              "--sidebar-width": "calc(var(--spacing) * 72)",
+              "--header-height": "calc(var(--spacing) * 12)",
+            } as React.CSSProperties
+          }
+        >
           <Sidebar user={user} />
-          <SidebarInset className="min-h-screen bg-[var(--surface)] text-[var(--text-1)]">
+          <SidebarInset className="min-h-screen bg-(--surface) text-(--text-1)">
             <Topbar user={user} />
-            <main className="flex-1 px-4 py-6 pb-8 sm:px-6 lg:px-8">
-              {gatedContent ?? children}
-            </main>
+            <div className="flex flex-1 flex-col">
+              <div className="@container/main flex flex-1 flex-col gap-2">
+                <main className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+                  {gatedContent ?? children}
+                </main>
+              </div>
+            </div>
           </SidebarInset>
         </SidebarProvider>
       </QueryProvider>

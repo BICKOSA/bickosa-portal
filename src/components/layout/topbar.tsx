@@ -6,8 +6,8 @@ import { Plus, Search } from "lucide-react";
 
 import { NotificationPanel } from "@/components/layout/notification-panel";
 import { Avatar } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { cn } from "@/lib/utils";
 
 type TopbarUser = {
   id: string;
@@ -43,49 +43,50 @@ export function Topbar({ user }: { user: TopbarUser }) {
   const pageTitle = getPageTitle(pathname);
 
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-[var(--border)] bg-[var(--white)] px-4 sm:px-6">
-      <SidebarTrigger className="md:hidden" />
-      <h1 className="min-w-0 truncate font-[var(--font-ui)] text-base font-semibold text-[var(--navy-900)]">
-        {pageTitle}
-      </h1>
+    <header className="sticky top-0 z-20 flex h-(--header-height) shrink-0 items-center gap-2 border-b border-border bg-(--white) transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
+      <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
+        <SidebarTrigger className="-ml-1" />
+        <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
+        <h1 className="min-w-0 truncate text-base font-semibold text-(--navy-900)" style={{ fontFamily: "var(--font-ui)" }}>
+          {pageTitle}
+        </h1>
 
-      <div className="mx-auto hidden max-w-xl flex-1 lg:flex">
-        <label className="relative w-full">
-          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[var(--text-3)]" />
-          <input
-            type="search"
-            placeholder="Search portal (coming soon)"
-            readOnly
-            className="h-10 w-full rounded-full border border-[var(--border)] bg-[var(--surface)] pl-9 pr-4 text-sm text-[var(--text-2)] outline-none"
-          />
-        </label>
-      </div>
+        <div className="mx-auto hidden max-w-xl flex-1 lg:flex">
+          <label className="relative w-full">
+            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-(--text-3)" />
+            <input
+              type="search"
+              placeholder="Search portal (coming soon)"
+              readOnly
+              className="h-10 w-full rounded-full border border-border bg-(--surface) pl-9 pr-4 text-sm text-(--text-2) outline-none"
+            />
+          </label>
+        </div>
 
-      <div className="ml-auto flex items-center gap-2">
-        <NotificationPanel />
+        <div className="ml-auto flex items-center gap-2">
+          <NotificationPanel />
 
-        <button
-          type="button"
-          className="inline-flex size-9 items-center justify-center rounded-full border border-[var(--navy-900)] bg-[var(--navy-900)] text-[var(--white)] transition-colors hover:bg-[var(--navy-700)]"
-          aria-label="Quick action"
-        >
-          <Plus className="size-4" />
-        </button>
+          <button
+            type="button"
+            className="inline-flex size-9 items-center justify-center rounded-full border border-(--navy-900) bg-(--navy-900) text-(--white) transition-colors hover:bg-(--navy-700)"
+            aria-label="Quick action"
+          >
+            <Plus className="size-4" />
+          </button>
 
-        <Link
-          href="/profile"
-          aria-label="My profile"
-          className={cn(
-            "inline-flex rounded-full ring-offset-2 transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--navy-400)]",
-          )}
-        >
-          <Avatar
-            size="sm"
-            src={user.image}
-            name={user.name ?? "BICKOSA Member"}
-            className="border-[var(--border-2)] bg-[var(--navy-50)]"
-          />
-        </Link>
+          <Link
+            href="/profile"
+            aria-label="My profile"
+            className="inline-flex rounded-full ring-offset-2 transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--navy-400)"
+          >
+            <Avatar
+              size="sm"
+              src={user.image}
+              name={user.name ?? "BICKOSA Member"}
+              className="border-(--border-2) bg-(--navy-50)"
+            />
+          </Link>
+        </div>
       </div>
     </header>
   );

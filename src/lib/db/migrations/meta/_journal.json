@@ -99,6 +99,13 @@
       "when": 1773742200000,
       "tag": "0013_unified_registration_flow",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1773745800000,
+      "tag": "0014_missing_portal_tables",
+      "breakpoints": true
     }
   ]
 }
