@@ -10,6 +10,8 @@ import {
   type MentorshipRequestTemplateProps,
   NewsletterTemplate,
   type NewsletterTemplateProps,
+  RenewalReminderTemplate,
+  type RenewalReminderTemplateProps,
   PasswordResetTemplate,
   type PasswordResetTemplateProps,
   VerificationApprovedTemplate,
@@ -282,5 +284,25 @@ export function sendNewsletterEmail(input: SendNewsletterEmailInput) {
       portalUrl,
     }),
     text: `${input.monthLabel} newsletter: events, members, campaign and sports updates. Read more: ${portalUrl}`,
+  });
+}
+
+export type SendMembershipRenewalReminderEmailInput = {
+  to: string;
+  firstName: RenewalReminderTemplateProps["firstName"];
+  expiryDate: RenewalReminderTemplateProps["expiryDate"];
+  renewalUrl: RenewalReminderTemplateProps["renewalUrl"];
+};
+
+export function sendMembershipRenewalReminderEmail(input: SendMembershipRenewalReminderEmailInput) {
+  return sendEmail({
+    to: input.to,
+    subject: "Your BICKOSA membership renewal is due soon",
+    react: createElement(RenewalReminderTemplate, {
+      firstName: input.firstName,
+      expiryDate: input.expiryDate,
+      renewalUrl: input.renewalUrl,
+    }),
+    text: `Hello ${input.firstName}, your membership expires on ${input.expiryDate}. Renew now: ${input.renewalUrl}`,
   });
 }

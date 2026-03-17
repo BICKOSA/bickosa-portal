@@ -15,6 +15,10 @@ export {
   type NewsletterTemplateProps,
 } from "@/lib/email/templates/newsletter";
 export {
+  RenewalReminderTemplate,
+  type RenewalReminderTemplateProps,
+} from "@/lib/email/templates/renewal-reminder";
+export {
   PasswordResetTemplate,
   type PasswordResetTemplateProps,
 } from "@/lib/email/templates/password-reset";

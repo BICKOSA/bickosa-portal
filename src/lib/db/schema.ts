@@ -396,6 +396,7 @@ export const eventRegistrations = pgTable(
     status: eventRegistrationStatusEnum("status").notNull(),
     ticketRef: varchar("ticket_ref", { length: 255 }).unique(),
     paidAt: timestamp("paid_at", { withTimezone: true }),
+    remindedAt: timestamp("reminded_at", { withTimezone: true }),
     paymentRef: varchar("payment_ref", { length: 255 }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()

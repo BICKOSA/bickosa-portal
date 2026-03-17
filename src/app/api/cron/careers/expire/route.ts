@@ -1,20 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { expireDueJobPostings } from "@/lib/careers";
-
-function isCronAuthorized(request: Request): boolean {
-  const configuredSecret = process.env.CRON_SECRET;
-  if (!configuredSecret) {
-    return true;
-  }
-
-  const headerValue = request.headers.get("authorization");
-  if (!headerValue) {
-    return false;
-  }
-
-  return headerValue === `Bearer ${configuredSecret}`;
-}
+import { isCronAuthorized } from "@/lib/cron-auth";
 
 export async function POST(request: Request) {
   if (!isCronAuthorized(request)) {

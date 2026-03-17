@@ -28,6 +28,121 @@ const PROTECTED_REWRITE_PREFIXES = [
 
 const PROTECTED_DIRECT_PREFIXES = ["/events"];
 
+type RateLimitRule = {
+  prefix: string;
+  limit: number;
+  windowMs: number;
+  keyType: "ip" | "user";
+};
+
+type RateLimitEntry = {
+  count: number;
+  resetAt: number;
+};
+
+const RATE_LIMIT_RULES: RateLimitRule[] = [
+  {
+    prefix: "/api/donations",
+    limit: 10,
+    windowMs: 60_000,
+    keyType: "ip",
+  },
+  {
+    prefix: "/api/directory",
+    limit: 30,
+    windowMs: 60_000,
+    keyType: "user",
+  },
+  {
+    prefix: "/api/upload",
+    limit: 5,
+    windowMs: 60_000,
+    keyType: "user",
+  },
+];
+
+const globalRateLimitStore = globalThis as typeof globalThis & {
+  __bickosaRateLimitStore?: Map<string, RateLimitEntry>;
+};
+
+function getRateLimitStore(): Map<string, RateLimitEntry> {
+  if (!globalRateLimitStore.__bickosaRateLimitStore) {
+    globalRateLimitStore.__bickosaRateLimitStore = new Map<string, RateLimitEntry>();
+  }
+
+  return globalRateLimitStore.__bickosaRateLimitStore;
+}
+
+function getRequestIp(request: NextRequest): string {
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  if (forwardedFor) {
+    const [first] = forwardedFor.split(",");
+    if (first) {
+      return first.trim();
+    }
+  }
+
+  const realIp = request.headers.get("x-real-ip");
+  if (realIp) {
+    return realIp.trim();
+  }
+
+  return "unknown";
+}
+
+async function getUserRateLimitKey(request: NextRequest): Promise<string> {
+  const session = await auth.api.getSession({
+    headers: request.headers,
+  });
+
+  if (session?.user?.id) {
+    return `user:${session.user.id}`;
+  }
+
+  return `anon-ip:${getRequestIp(request)}`;
+}
+
+async function applyRateLimit(request: NextRequest): Promise<NextResponse | null> {
+  const rule = RATE_LIMIT_RULES.find((item) => matchesPrefix(request.nextUrl.pathname, item.prefix));
+  if (!rule) {
+    return null;
+  }
+
+  const keyBase =
+    rule.keyType === "ip" ? `ip:${getRequestIp(request)}` : await getUserRateLimitKey(request);
+  const now = Date.now();
+  const store = getRateLimitStore();
+  const scopedKey = `${rule.prefix}:${keyBase}`;
+  const current = store.get(scopedKey);
+
+  if (!current || current.resetAt <= now) {
+    store.set(scopedKey, {
+      count: 1,
+      resetAt: now + rule.windowMs,
+    });
+    return null;
+  }
+
+  if (current.count >= rule.limit) {
+    const retryAfterSeconds = Math.max(1, Math.ceil((current.resetAt - now) / 1000));
+    return NextResponse.json(
+      {
+        message: "Too many requests. Please try again shortly.",
+      },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(retryAfterSeconds),
+        },
+      },
+    );
+  }
+
+  current.count += 1;
+  store.set(scopedKey, current);
+  return null;
+}
+
 function matchesPrefix(pathname: string, prefix: string): boolean {
   return pathname === prefix || pathname.startsWith(`${prefix}/`);
 }
@@ -53,6 +168,11 @@ function shouldRewriteToPortal(pathname: string): boolean {
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  const rateLimitedResponse = await applyRateLimit(request);
+  if (rateLimitedResponse) {
+    return rateLimitedResponse;
+  }
 
   if (matchesPrefix(pathname, "/portal")) {
     const redirectUrl = request.nextUrl.clone();
@@ -105,5 +225,8 @@ export const config = {
     "/donate/:path*",
     "/settings/:path*",
     "/governance/:path*",
+    "/api/donations/:path*",
+    "/api/directory/:path*",
+    "/api/upload/:path*",
   ],
 };
