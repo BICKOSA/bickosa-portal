@@ -48,7 +48,11 @@ export function ProfilePageClient({
             fullName={fullName}
             currentAvatarUrl={profile.avatarUrl}
             onAvatarUpdated={(avatarUrl, avatarKey) =>
-              setProfile((prev) => ({ ...prev, avatarUrl, avatarKey }))
+              setProfile((prev) => ({
+                ...prev,
+                avatarUrl,
+                avatarKey: avatarKey ?? prev.avatarKey,
+              }))
             }
           />
           <MembershipCard profile={profile} />

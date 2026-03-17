@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 type AvatarUploadProps = {
   fullName: string;
   currentAvatarUrl: string | null;
-  onAvatarUpdated: (avatarUrl: string | null, avatarKey: string | null) => void;
+  onAvatarUpdated: (avatarUrl: string | null, avatarKey?: string | null) => void;
 };
 
 const ACCEPTED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -65,9 +65,9 @@ export function AvatarUpload({
     setIsUploading(true);
     try {
       const formData = new FormData();
-      formData.append("avatar", pendingFile);
+      formData.append("file", pendingFile);
 
-      const response = await fetch("/api/profile/avatar", {
+      const response = await fetch("/api/upload/avatar", {
         method: "POST",
         body: formData,
       });
@@ -79,12 +79,9 @@ export function AvatarUpload({
         throw new Error(errorBody?.message ?? "Failed to upload avatar.");
       }
 
-      const json = (await response.json()) as {
-        avatarUrl: string | null;
-        avatarKey: string | null;
-      };
+      const json = (await response.json()) as { url: string };
 
-      onAvatarUpdated(json.avatarUrl, json.avatarKey);
+      onAvatarUpdated(json.url, null);
       setPendingFile(null);
       toast.success("Profile photo updated.");
     } catch (error) {
