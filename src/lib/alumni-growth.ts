@@ -7,6 +7,7 @@ import {
   gte,
   ilike,
   inArray,
+  isNull,
   lte,
   or,
   sql,
@@ -755,7 +756,10 @@ export async function getCohortPageData(year: number) {
               sql`coalesce(${alumniProfiles.graduationYear}, ${alumniProfiles.yearOfCompletion})`,
               year,
             ),
-            eq(privacySettings.showInDirectory, true),
+            or(
+              eq(privacySettings.showInDirectory, true),
+              isNull(privacySettings.showInDirectory),
+            ),
           ),
         )
         .orderBy(asc(users.name)),
@@ -834,7 +838,7 @@ export async function listAdminCohorts() {
       ),
     )
     .leftJoin(users, eq(users.id, cohortRepresentatives.userId))
-    .groupBy(cohorts.id, users.name)
+    .groupBy(cohorts.id, cohorts.graduationYear, cohorts.name, users.name)
     .orderBy(desc(cohorts.graduationYear));
 }
 
@@ -898,6 +902,7 @@ export async function listWhatsappGroups() {
       adminName: sql<
         string | null
       >`coalesce(${users.name}, ${whatsappGroups.adminName})`,
+      adminPhone: whatsappGroups.adminPhone,
       memberCount: whatsappGroups.memberCount,
       inviteLink: whatsappGroups.inviteLink,
       notes: whatsappGroups.notes,

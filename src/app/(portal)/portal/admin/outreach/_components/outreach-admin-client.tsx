@@ -13,6 +13,7 @@ type GroupRow = {
   groupType: "cohort" | "regional" | "sports" | "leadership" | "general";
   cohortName: string | null;
   adminName: string | null;
+  adminPhone: string | null;
   memberCount: number | null;
   inviteLink: string | null;
   notes: string | null;
@@ -336,7 +337,7 @@ export function OutreachAdminClient({
                               (option) => option.name === group.cohortName,
                             )?.id ?? "",
                           adminName: group.adminName ?? "",
-                          adminPhone: "",
+                          adminPhone: group.adminPhone ?? "",
                           memberCount: String(group.memberCount ?? ""),
                           inviteLink: group.inviteLink ?? "",
                           notes: group.notes ?? "",
@@ -417,12 +418,19 @@ export function OutreachAdminClient({
                   size="sm"
                   variant="outline"
                   onClick={() => {
-                    navigator.clipboard.writeText(item.url).then(() => {
-                      toast({
-                        title: "Shareable URL copied",
-                        variant: "success",
+                    navigator.clipboard
+                      .writeText(item.url)
+                      .then(() => {
+                        toast({
+                          title: "Shareable URL copied",
+                          variant: "success",
+                        });
+                      })
+                      .catch(() => {
+                        toast({
+                          title: "Could not copy URL",
+                        });
                       });
-                    });
                   }}
                 >
                   Copy shareable URL
