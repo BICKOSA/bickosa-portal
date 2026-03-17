@@ -98,6 +98,10 @@ export const mentorshipStatusEnum = pgEnum("mentorship_status", [
   "completed",
   "cancelled",
 ]);
+export const mentorshipContactMethodEnum = pgEnum("mentorship_contact_method", [
+  "email",
+  "scheduling_link",
+]);
 
 export const jobTypeEnum = pgEnum("job_type", [
   "fulltime",
@@ -552,6 +556,29 @@ export const mentorshipRequests = pgTable("mentorship_requests", {
   respondedAt: timestamp("responded_at", { withTimezone: true }),
 });
 
+export const mentorshipPreferences = pgTable(
+  "mentorship_preferences",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .unique()
+      .references(() => users.id, { onDelete: "cascade" }),
+    isAvailable: boolean("is_available").default(false).notNull(),
+    focusAreas: text("focus_areas").array().default(sql`ARRAY[]::text[]`).notNull(),
+    maxMentees: integer("max_mentees").default(1).notNull(),
+    contactMethod: mentorshipContactMethodEnum("contact_method").default("email").notNull(),
+    schedulingUrl: text("scheduling_url"),
+    mentorshipBio: varchar("mentorship_bio", { length: 280 }),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+);
+
 export const jobPostings = pgTable("job_postings", {
   id: uuid("id").defaultRandom().primaryKey(),
   posterId: uuid("poster_id")
@@ -650,6 +677,8 @@ export type SportsPlayerStat = InferSelectModel<typeof sportsPlayerStats>;
 export type NewSportsPlayerStat = InferInsertModel<typeof sportsPlayerStats>;
 export type MentorshipRequest = InferSelectModel<typeof mentorshipRequests>;
 export type NewMentorshipRequest = InferInsertModel<typeof mentorshipRequests>;
+export type MentorshipPreference = InferSelectModel<typeof mentorshipPreferences>;
+export type NewMentorshipPreference = InferInsertModel<typeof mentorshipPreferences>;
 export type JobPosting = InferSelectModel<typeof jobPostings>;
 export type NewJobPosting = InferInsertModel<typeof jobPostings>;
 export type Document = InferSelectModel<typeof documents>;
