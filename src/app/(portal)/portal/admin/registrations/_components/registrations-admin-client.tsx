@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
@@ -33,6 +34,8 @@ export function RegistrationsAdminClient({ rows }: Props) {
   const router = useRouter();
   const { toast } = useToast();
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [isBulkBusy, setIsBulkBusy] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [duplicatesByRow, setDuplicatesByRow] = useState<
     Record<string, DuplicateMatch[]>
   >({});
@@ -41,6 +44,14 @@ export function RegistrationsAdminClient({ rows }: Props) {
     () => rows.filter((row) => row.verificationStatus === "pending").length,
     [rows],
   );
+  const pendingIds = useMemo(
+    () =>
+      rows
+        .filter((row) => row.verificationStatus === "pending")
+        .map((row) => row.id),
+    [rows],
+  );
+  const selectedPendingIds = selectedIds.filter((id) => pendingIds.includes(id));
 
   async function runAction(
     id: string,
@@ -102,6 +113,51 @@ export function RegistrationsAdminClient({ rows }: Props) {
     }
   }
 
+  async function runBulkVerify() {
+    if (selectedPendingIds.length === 0) {
+      toast({ title: "Select at least one pending registration." });
+      return;
+    }
+
+    setIsBulkBusy(true);
+    try {
+      const response = await fetch("/api/admin/registrations/verify-bulk", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          registrationIds: selectedPendingIds,
+          schoolRecordMatch: true,
+        }),
+      });
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as {
+          message?: string;
+        } | null;
+        throw new Error(payload?.message ?? "Bulk verification failed.");
+      }
+      const payload = (await response.json()) as {
+        requested: number;
+        verified: number;
+        failed: number;
+      };
+      toast({
+        title: `Bulk verify completed: ${payload.verified}/${payload.requested}`,
+        description:
+          payload.failed > 0 ? `${payload.failed} failed. Review queue.` : undefined,
+        variant: payload.failed > 0 ? undefined : "success",
+      });
+      setSelectedIds([]);
+      router.refresh();
+    } catch (error) {
+      toast({
+        title: "Bulk verification failed",
+        description: error instanceof Error ? error.message : "Please retry.",
+      });
+    } finally {
+      setIsBulkBusy(false);
+    }
+  }
+
   return (
     <div className="space-y-3 rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--white)] p-4">
       <div className="flex items-center justify-between">
@@ -109,11 +165,39 @@ export function RegistrationsAdminClient({ rows }: Props) {
           Pending queue:{" "}
           <span className="text-[var(--navy-700)]">{pendingCount}</span>
         </p>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={pendingIds.length === 0 || isBulkBusy}
+            onClick={() =>
+              setSelectedIds((current) =>
+                current.length === pendingIds.length ? [] : pendingIds,
+              )
+            }
+          >
+            {selectedIds.length === pendingIds.length
+              ? "Clear selection"
+              : "Select all pending"}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="navy"
+            isLoading={isBulkBusy}
+            disabled={selectedPendingIds.length === 0}
+            onClick={() => void runBulkVerify()}
+          >
+            Bulk verify selected
+          </Button>
+        </div>
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full border-collapse text-sm">
           <thead>
             <tr className="border-b border-[var(--border)] text-left text-[var(--text-3)]">
+              <th className="px-3 py-2 font-medium">Select</th>
               <th className="px-3 py-2 font-medium">Name</th>
               <th className="px-3 py-2 font-medium">Email</th>
               <th className="px-3 py-2 font-medium">Year</th>
@@ -131,8 +215,27 @@ export function RegistrationsAdminClient({ rows }: Props) {
                   key={row.id}
                   className="border-b border-[var(--border)] align-top"
                 >
+                  <td className="px-3 py-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(row.id)}
+                      disabled={row.verificationStatus !== "pending"}
+                      onChange={(event) =>
+                        setSelectedIds((current) =>
+                          event.target.checked
+                            ? Array.from(new Set([...current, row.id]))
+                            : current.filter((id) => id !== row.id),
+                        )
+                      }
+                    />
+                  </td>
                   <td className="px-3 py-2 font-medium text-[var(--text-1)]">
-                    {row.fullName}
+                    <Link
+                      href={`/admin/registrations/${row.id}`}
+                      className="underline"
+                    >
+                      {row.fullName}
+                    </Link>
                   </td>
                   <td className="px-3 py-2 text-[var(--text-2)]">
                     {row.email}

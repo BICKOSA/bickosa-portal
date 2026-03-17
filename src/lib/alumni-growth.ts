@@ -34,6 +34,10 @@ import {
   sendVerificationRejectedEmail,
   sendWelcomeEmail,
 } from "@/lib/email/resend";
+import {
+  parseSchoolRecordsCsvText,
+  type SchoolRecordImportRow,
+} from "@/lib/school-records-parser";
 
 type RegistrationStatus =
   (typeof registrationVerificationStatusEnum.enumValues)[number];
@@ -439,6 +443,42 @@ export async function verifyRegistrationAndCreateAccount(input: {
   await dispatchSetPasswordEmail(registration.email);
 }
 
+export async function verifyRegistrationsBulk(input: {
+  registrationIds: string[];
+  adminUserId: string;
+  verificationNotes?: string | null;
+  schoolRecordMatch: boolean;
+}) {
+  const uniqueIds = Array.from(new Set(input.registrationIds));
+  let verified = 0;
+  const failures: Array<{ registrationId: string; message: string }> = [];
+
+  for (const registrationId of uniqueIds) {
+    try {
+      await verifyRegistrationAndCreateAccount({
+        registrationId,
+        adminUserId: input.adminUserId,
+        verificationNotes: input.verificationNotes,
+        schoolRecordMatch: input.schoolRecordMatch,
+      });
+      verified += 1;
+    } catch (error) {
+      failures.push({
+        registrationId,
+        message:
+          error instanceof Error ? error.message : "Failed to verify registration.",
+      });
+    }
+  }
+
+  return {
+    requested: uniqueIds.length,
+    verified,
+    failed: failures.length,
+    failures,
+  };
+}
+
 export async function rejectRegistration(input: {
   registrationId: string;
   adminUserId: string;
@@ -489,115 +529,25 @@ export async function markRegistrationDuplicate(input: {
     .where(eq(alumniRegistrations.id, input.registrationId));
 }
 
-type SchoolRecordImportRow = {
-  fullName: string;
-  graduationYear: number;
-  stream: string | null;
-  house: string | null;
-  admissionNumber: string | null;
-};
-
-function parseCsvLine(line: string): string[] {
-  const output: string[] = [];
-  let current = "";
-  let inQuotes = false;
-
-  for (let index = 0; index < line.length; index += 1) {
-    const char = line[index];
-    if (char === '"') {
-      const isEscapedQuote = inQuotes && line[index + 1] === '"';
-      if (isEscapedQuote) {
-        current += '"';
-        index += 1;
-      } else {
-        inQuotes = !inQuotes;
-      }
-      continue;
-    }
-    if (char === "," && !inQuotes) {
-      output.push(current.trim());
-      current = "";
-      continue;
-    }
-    current += char;
-  }
-  output.push(current.trim());
-  return output.map((value) => value.replace(/^"|"$/g, "").trim());
-}
-
 export function previewSchoolRecordsCsv(input: string) {
-  const lines = input
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0);
-  if (lines.length < 2) {
-    return { headers: [], rows: [] };
-  }
-  const headers = parseCsvLine(lines[0] ?? "");
-  const rows = lines.slice(1, 11).map((line) => parseCsvLine(line));
-  return { headers, rows };
-}
-
-function mapSchoolRecordRow(
-  headers: string[],
-  values: string[],
-): SchoolRecordImportRow | null {
-  const toHeaderIndex = (aliases: string[]) =>
-    headers.findIndex((header) =>
-      aliases.includes(header.toLowerCase().trim()),
-    );
-
-  const fullNameIndex = toHeaderIndex(["full_name", "fullname", "name"]);
-  const yearIndex = toHeaderIndex(["graduation_year", "year", "class_year"]);
-  if (fullNameIndex < 0 || yearIndex < 0) {
-    return null;
-  }
-
-  const streamIndex = toHeaderIndex(["stream"]);
-  const houseIndex = toHeaderIndex(["house"]);
-  const admissionIndex = toHeaderIndex(["admission_number", "admission_no"]);
-  const graduationYear = Number.parseInt(values[yearIndex] ?? "", 10);
-  if (!Number.isFinite(graduationYear)) {
-    return null;
-  }
-
-  const fullName = (values[fullNameIndex] ?? "").trim();
-  if (!fullName) {
-    return null;
-  }
-
+  const parsed = parseSchoolRecordsCsvText(input);
   return {
-    fullName,
-    graduationYear,
-    stream: normalizeOptional(values[streamIndex] ?? null),
-    house: normalizeOptional(values[houseIndex] ?? null),
-    admissionNumber: normalizeOptional(values[admissionIndex] ?? null),
+    headers: parsed.headers,
+    rows: parsed.rows.slice(0, 10),
   };
 }
 
-export async function importSchoolRecordsFromCsv(input: {
-  csvText: string;
+export async function importSchoolRecordsRows(input: {
+  rows: SchoolRecordImportRow[];
   sourceFile: string;
   uploadedBy: string;
 }) {
-  const lines = input.csvText
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0);
-  if (lines.length < 2) {
-    throw new Error("CSV must include a header and at least one data row.");
-  }
-  const headers = parseCsvLine(lines[0] ?? "");
-  const parsedRows = lines
-    .slice(1)
-    .map((line) => mapSchoolRecordRow(headers, parseCsvLine(line)))
-    .filter((row): row is SchoolRecordImportRow => row !== null);
-  if (parsedRows.length === 0) {
+  if (input.rows.length === 0) {
     throw new Error("No valid school records found in uploaded file.");
   }
 
   await db.insert(schoolEnrollmentRecords).values(
-    parsedRows.map((row) => ({
+    input.rows.map((row) => ({
       fullName: row.fullName,
       graduationYear: row.graduationYear,
       stream: row.stream,
@@ -608,7 +558,23 @@ export async function importSchoolRecordsFromCsv(input: {
     })),
   );
 
-  return { imported: parsedRows.length };
+  return { imported: input.rows.length };
+}
+
+export async function importSchoolRecordsFromCsv(input: {
+  csvText: string;
+  sourceFile: string;
+  uploadedBy: string;
+}) {
+  const parsed = parseSchoolRecordsCsvText(input.csvText);
+  if (parsed.rows.length === 0) {
+    throw new Error("CSV must include a header and at least one data row.");
+  }
+  return importSchoolRecordsRows({
+    rows: parsed.validRows,
+    sourceFile: input.sourceFile,
+    uploadedBy: input.uploadedBy,
+  });
 }
 
 export async function listSchoolRecordBatches() {
