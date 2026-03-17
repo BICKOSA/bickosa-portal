@@ -1,5 +1,5 @@
 import { alias } from "drizzle-orm/pg-core";
-import { and, asc, desc, eq, gte, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, or, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import {

@@ -194,8 +194,8 @@ export function PollsAdminClient({
 
   return (
     <div className="space-y-5">
-      <div className="rounded-(--r-lg) border border-(--border) bg-(--white) p-4">
-        <h3 className="font-(--font-ui) text-base font-semibold text-(--text-1)">Create Poll</h3>
+      <div className="rounded-(--r-lg) border border-border bg-(--white) p-4">
+        <h3 className="text-base font-semibold text-(--text-1)">Create Poll</h3>
         <form className="mt-3 grid gap-3 md:grid-cols-2" onSubmit={form.handleSubmit(onCreate)}>
           <Input label="Title" {...form.register("title")} />
           <Input
@@ -210,7 +210,7 @@ export function PollsAdminClient({
           </div>
           <label className="text-sm text-(--text-2)">
             Poll type
-            <select className="mt-1 w-full rounded-(--r-md) border border-(--border) px-3 py-2 text-sm" {...form.register("pollType")}>
+            <select className="mt-1 w-full rounded-(--r-md) border border-border px-3 py-2 text-sm" {...form.register("pollType")}>
               <option value="yes_no_abstain">Yes / No / Abstain</option>
               <option value="multiple_choice">Multiple choice</option>
               <option value="ranked_choice">Ranked choice</option>
@@ -219,7 +219,7 @@ export function PollsAdminClient({
           <label className="text-sm text-(--text-2)">
             Target audience
             <select
-              className="mt-1 w-full rounded-(--r-md) border border-(--border) px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-(--r-md) border border-border px-3 py-2 text-sm"
               {...form.register("targetAudience")}
             >
               <option value="all_members">All members</option>
@@ -230,7 +230,7 @@ export function PollsAdminClient({
           {targetAudience === "chapter" ? (
             <label className="text-sm text-(--text-2)">
               Chapter
-              <select className="mt-1 w-full rounded-(--r-md) border border-(--border) px-3 py-2 text-sm" {...form.register("chapterId")}>
+              <select className="mt-1 w-full rounded-(--r-md) border border-border px-3 py-2 text-sm" {...form.register("chapterId")}>
                 <option value="">Select chapter</option>
                 {chapters.map((chapter) => (
                   <option key={chapter.id} value={chapter.id}>
@@ -248,14 +248,14 @@ export function PollsAdminClient({
               {...form.register("optionsCsv")}
             />
           ) : null}
-          <div className="rounded-(--r-md) border border-(--border) p-3 md:col-span-2">
+          <div className="rounded-(--r-md) border border-border p-3 md:col-span-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-(--text-3)">Voting window</p>
             <div className="mt-2 grid gap-3 md:grid-cols-2">
               <label className="text-sm text-(--text-2)">
                 Opens
                 <input
                   type="datetime-local"
-                  className="mt-1 w-full rounded-(--r-md) border border-(--border) px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-(--r-md) border border-border px-3 py-2 text-sm"
                   {...form.register("votingOpens")}
                 />
               </label>
@@ -263,7 +263,7 @@ export function PollsAdminClient({
                 Closes
                 <input
                   type="datetime-local"
-                  className="mt-1 w-full rounded-(--r-md) border border-(--border) px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-(--r-md) border border-border px-3 py-2 text-sm"
                   {...form.register("votingCloses")}
                 />
               </label>
@@ -287,8 +287,8 @@ export function PollsAdminClient({
         </form>
       </div>
 
-      <div className="rounded-(--r-lg) border border-(--border) bg-(--white) p-4">
-        <h3 className="font-(--font-ui) text-base font-semibold text-(--text-1)">Polls</h3>
+      <div className="rounded-(--r-lg) border border-border bg-(--white) p-4">
+        <h3 className="text-base font-semibold text-(--text-1)">Polls</h3>
         <div className="mt-3 space-y-2">
           {polls.map((poll) => (
             <button
@@ -296,7 +296,7 @@ export function PollsAdminClient({
               type="button"
               onClick={() => setSelectedPollId(poll.id)}
               className={`w-full rounded-(--r-md) border px-3 py-2 text-left ${
-                selectedPollId === poll.id ? "border-(--navy-700) bg-(--navy-50)" : "border-(--border) bg-(--white)"
+                selectedPollId === poll.id ? "border-(--navy-700) bg-(--navy-50)" : "border-border bg-(--white)"
               }`}
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -316,8 +316,8 @@ export function PollsAdminClient({
       </div>
 
       {selectedPoll ? (
-        <div className="rounded-(--r-lg) border border-(--border) bg-(--white) p-4">
-          <h3 className="font-(--font-ui) text-base font-semibold text-(--text-1)">Actions — {selectedPoll.title}</h3>
+        <div className="rounded-(--r-lg) border border-border bg-(--white) p-4">
+          <h3 className="text-base font-semibold text-(--text-1)">Actions — {selectedPoll.title}</h3>
           <div className="mt-3 flex flex-wrap gap-2">
             <Button variant="outline" size="sm" onClick={() => void setStatus("open")}>
               Open
@@ -337,7 +337,7 @@ export function PollsAdminClient({
               <a href={`/api/admin/polls/${selectedPoll.id}/export.csv`}>Export CSV</a>
             </Button>
           </div>
-          <div className="mt-4 rounded-(--r-md) border border-(--border) bg-(--surface) p-3">
+          <div className="mt-4 rounded-(--r-md) border border-border bg-(--surface) p-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-(--text-3)">Results preview</p>
             <ChartContainer
               className="mt-2 h-[220px] w-full"

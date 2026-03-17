@@ -34,7 +34,7 @@ export default async function VotingHubPage() {
         description="Track open elections and active polls, then complete your nominations and votes."
       />
       <p className="rounded-[var(--r-md)] border border-[var(--border)] bg-[var(--white)] px-4 py-3 text-sm text-[var(--text-2)]">
-        Your participation is recorded for quorum and audit purposes in accordance with Uganda's Data
+        Your participation is recorded for quorum and audit purposes in accordance with Uganda&apos;s Data
         Protection and Privacy Act, 2019. Your specific ballot choice is kept confidential.
       </p>
 

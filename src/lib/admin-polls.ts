@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { asc, desc, eq, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { alumniProfiles, generalPolls, pollVotes } from "@/lib/db/schema";

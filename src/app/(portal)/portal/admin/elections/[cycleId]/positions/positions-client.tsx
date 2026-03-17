@@ -45,7 +45,7 @@ function SortablePositionRow({
     <div
       ref={setNodeRef}
       style={style}
-      className="flex flex-wrap items-center justify-between gap-2 rounded-(--r-md) border border-(--border) bg-(--white) px-3 py-2"
+      className="flex flex-wrap items-center justify-between gap-2 rounded-(--r-md) border border-border bg-(--white) px-3 py-2"
     >
       <div className="flex items-center gap-2">
         <button
@@ -182,8 +182,8 @@ export function ElectionPositionsClient({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-(--r-lg) border border-(--border) bg-(--white) p-4">
-        <h3 className="font-(--font-ui) text-base font-semibold text-(--text-1)">
+      <div className="rounded-(--r-lg) border border-border bg-(--white) p-4">
+        <h3 className="text-base font-semibold text-(--text-1)">
           {editing ? "Edit position" : "Add position"}
         </h3>
         <div className="mt-3 grid gap-3 md:grid-cols-2">
@@ -222,8 +222,8 @@ export function ElectionPositionsClient({
         </div>
       </div>
 
-      <div className="rounded-(--r-lg) border border-(--border) bg-(--white) p-4">
-        <h3 className="font-(--font-ui) text-base font-semibold text-(--text-1)">Position order</h3>
+      <div className="rounded-(--r-lg) border border-border bg-(--white) p-4">
+        <h3 className="text-base font-semibold text-(--text-1)">Position order</h3>
         <div className="mt-3 space-y-2">
           <DndContext sensors={sensors} onDragEnd={onDragEnd}>
             <SortableContext items={positions.map((position) => position.id)} strategy={verticalListSortingStrategy}>

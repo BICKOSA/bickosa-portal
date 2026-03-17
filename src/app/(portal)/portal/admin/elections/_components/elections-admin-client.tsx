@@ -283,16 +283,16 @@ export function ElectionsAdminClient(props: {
       </TabsList>
 
       <TabsContent value="cycles" className="space-y-4">
-        <div className="rounded-(--r-lg) border border-(--border) bg-(--white) p-4">
-          <h3 className="font-(--font-ui) text-base font-semibold text-(--text-1)">Create New Election</h3>
+        <div className="rounded-(--r-lg) border border-border bg-(--white) p-4">
+          <h3 className="text-base font-semibold text-(--text-1)">Create New Election</h3>
           <form className="mt-3 grid gap-3 md:grid-cols-2" onSubmit={cycleForm.handleSubmit(onCreateCycle)}>
             <input
-              className="rounded-(--r-md) border border-(--border) px-3 py-2 text-sm"
+              className="rounded-(--r-md) border border-border px-3 py-2 text-sm"
               placeholder="Title"
               {...cycleForm.register("title")}
             />
             <input
-              className="rounded-(--r-md) border border-(--border) px-3 py-2 text-sm"
+              className="rounded-(--r-md) border border-border px-3 py-2 text-sm"
               type="number"
               placeholder="Quorum %"
               {...cycleForm.register("quorumPercent", { valueAsNumber: true })}
@@ -302,14 +302,14 @@ export function ElectionsAdminClient(props: {
               placeholder="Description"
               {...cycleForm.register("description")}
             />
-            <div className="rounded-(--r-md) border border-(--border) p-3 md:col-span-2">
+            <div className="rounded-(--r-md) border border-border p-3 md:col-span-2">
               <p className="text-xs font-semibold uppercase tracking-wide text-(--text-3)">Nomination window</p>
               <div className="mt-2 grid gap-3 md:grid-cols-2">
                 <label className="text-sm text-(--text-2)">
                   Opens
                   <input
                     type="datetime-local"
-                    className="mt-1 w-full rounded-(--r-md) border border-(--border) px-3 py-2 text-sm"
+                    className="mt-1 w-full rounded-(--r-md) border border-border px-3 py-2 text-sm"
                     {...cycleForm.register("nominationOpens")}
                   />
                 </label>
@@ -317,20 +317,20 @@ export function ElectionsAdminClient(props: {
                   Closes
                   <input
                     type="datetime-local"
-                    className="mt-1 w-full rounded-(--r-md) border border-(--border) px-3 py-2 text-sm"
+                    className="mt-1 w-full rounded-(--r-md) border border-border px-3 py-2 text-sm"
                     {...cycleForm.register("nominationCloses")}
                   />
                 </label>
               </div>
             </div>
-            <div className="rounded-(--r-md) border border-(--border) p-3 md:col-span-2">
+            <div className="rounded-(--r-md) border border-border p-3 md:col-span-2">
               <p className="text-xs font-semibold uppercase tracking-wide text-(--text-3)">Voting window</p>
               <div className="mt-2 grid gap-3 md:grid-cols-2">
                 <label className="text-sm text-(--text-2)">
                   Opens
                   <input
                     type="datetime-local"
-                    className="mt-1 w-full rounded-(--r-md) border border-(--border) px-3 py-2 text-sm"
+                    className="mt-1 w-full rounded-(--r-md) border border-border px-3 py-2 text-sm"
                     {...cycleForm.register("votingOpens")}
                   />
                 </label>
@@ -338,7 +338,7 @@ export function ElectionsAdminClient(props: {
                   Closes
                   <input
                     type="datetime-local"
-                    className="mt-1 w-full rounded-(--r-md) border border-(--border) px-3 py-2 text-sm"
+                    className="mt-1 w-full rounded-(--r-md) border border-border px-3 py-2 text-sm"
                     {...cycleForm.register("votingCloses")}
                   />
                 </label>
@@ -352,9 +352,9 @@ export function ElectionsAdminClient(props: {
           </form>
         </div>
 
-        <div className="rounded-(--r-lg) border border-(--border) bg-(--white) p-4">
+        <div className="rounded-(--r-lg) border border-border bg-(--white) p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h3 className="font-(--font-ui) text-base font-semibold text-(--text-1)">Election Cycles</h3>
+            <h3 className="text-base font-semibold text-(--text-1)">Election Cycles</h3>
             {selectedCycle ? (
               <div className="flex gap-2">
                 <Button asChild variant="outline" size="sm">
@@ -375,7 +375,7 @@ export function ElectionsAdminClient(props: {
                 className={`w-full rounded-(--r-md) border px-3 py-2 text-left ${
                   selectedCycleId === cycle.id
                     ? "border-(--navy-700) bg-(--navy-50)"
-                    : "border-(--border) bg-(--white)"
+                    : "border-border bg-(--white)"
                 }`}
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -399,10 +399,10 @@ export function ElectionsAdminClient(props: {
             Bulk approve selected
           </Button>
         </div>
-        <div className="rounded-(--r-lg) border border-(--border) bg-(--white) p-4">
+        <div className="rounded-(--r-lg) border border-border bg-(--white) p-4">
           <div className="space-y-2">
             {nominationsForSelectedCycle.map((nomination) => (
-              <div key={nomination.nominationId} className="rounded-(--r-md) border border-(--border) p-3">
+              <div key={nomination.nominationId} className="rounded-(--r-md) border border-border p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <label className="inline-flex items-center gap-2 text-sm">
                     <Checkbox
@@ -448,24 +448,24 @@ export function ElectionsAdminClient(props: {
 
       <TabsContent value="turnout" className="space-y-4">
         <div className="grid gap-3 md:grid-cols-3">
-          <div className="rounded-(--r-lg) border border-(--border) bg-(--white) p-4">
+          <div className="rounded-(--r-lg) border border-border bg-(--white) p-4">
             <p className="text-xs uppercase tracking-wide text-(--text-3)">Eligible voters</p>
             <p className="mt-1 text-3xl font-semibold text-(--navy-900)">{turnout?.eligibleCount ?? 0}</p>
           </div>
-          <div className="rounded-(--r-lg) border border-(--border) bg-(--white) p-4">
+          <div className="rounded-(--r-lg) border border-border bg-(--white) p-4">
             <p className="text-xs uppercase tracking-wide text-(--text-3)">Votes cast</p>
             <p className="mt-1 text-3xl font-semibold text-(--navy-900)">{turnout?.votedCount ?? 0}</p>
           </div>
-          <div className="rounded-(--r-lg) border border-(--border) bg-(--white) p-4">
+          <div className="rounded-(--r-lg) border border-border bg-(--white) p-4">
             <p className="text-xs uppercase tracking-wide text-(--text-3)">Turnout %</p>
             <p className="mt-1 text-3xl font-semibold text-(--navy-900)">{turnout?.turnoutPercent ?? 0}%</p>
           </div>
         </div>
-        <div className="rounded-(--r-lg) border border-(--border) bg-(--white) p-4">
-          <h3 className="font-(--font-ui) text-base font-semibold text-(--text-1)">Per-position turnout</h3>
+        <div className="rounded-(--r-lg) border border-border bg-(--white) p-4">
+          <h3 className="text-base font-semibold text-(--text-1)">Per-position turnout</h3>
           <div className="mt-2 space-y-2">
             {turnout?.perPosition.map((row) => (
-              <div key={row.positionId} className="rounded-(--r-md) border border-(--border) px-3 py-2">
+              <div key={row.positionId} className="rounded-(--r-md) border border-border px-3 py-2">
                 <p className="text-sm font-semibold text-(--text-1)">{row.positionTitle}</p>
                 <p className="text-xs text-(--text-3)">
                   Eligible {row.eligibleCount} · Voted {row.votedCount} · Remaining {row.remainingCount}
@@ -489,7 +489,7 @@ export function ElectionsAdminClient(props: {
             </>
           ) : null}
         </div>
-        <div className="rounded-(--r-lg) border border-(--border) bg-(--white) p-4">
+        <div className="rounded-(--r-lg) border border-border bg-(--white) p-4">
           <ChartContainer
             className="mb-4 h-[280px] w-full"
             config={{
@@ -523,7 +523,7 @@ export function ElectionsAdminClient(props: {
                 className={`rounded-(--r-md) border px-3 py-2 ${
                   index === 0 || resultsForSelectedCycle[index - 1]?.positionId !== row.positionId
                     ? "border-(--gold-300) bg-(--gold-50)"
-                    : "border-(--border)"
+                    : "border-border"
                 }`}
               >
                 <p className="text-sm font-semibold text-(--text-1)">

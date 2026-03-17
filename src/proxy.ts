@@ -1,9 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { auth } from "@/lib/auth/auth";
-import { isAdminUserRole } from "@/lib/auth/roles";
-
 const PUBLIC_PATHS = new Set([
   "/",
   "/login",
@@ -32,7 +29,7 @@ type RateLimitRule = {
   prefix: string;
   limit: number;
   windowMs: number;
-  keyType: "ip" | "user";
+  keyType: "ip";
 };
 
 type RateLimitEntry = {
@@ -51,13 +48,13 @@ const RATE_LIMIT_RULES: RateLimitRule[] = [
     prefix: "/api/directory",
     limit: 30,
     windowMs: 60_000,
-    keyType: "user",
+    keyType: "ip",
   },
   {
     prefix: "/api/upload",
     limit: 5,
     windowMs: 60_000,
-    keyType: "user",
+    keyType: "ip",
   },
 ];
 
@@ -90,26 +87,13 @@ function getRequestIp(request: NextRequest): string {
   return "unknown";
 }
 
-async function getUserRateLimitKey(request: NextRequest): Promise<string> {
-  const session = await auth.api.getSession({
-    headers: request.headers,
-  });
-
-  if (session?.user?.id) {
-    return `user:${session.user.id}`;
-  }
-
-  return `anon-ip:${getRequestIp(request)}`;
-}
-
-async function applyRateLimit(request: NextRequest): Promise<NextResponse | null> {
+function applyRateLimit(request: NextRequest): NextResponse | null {
   const rule = RATE_LIMIT_RULES.find((item) => matchesPrefix(request.nextUrl.pathname, item.prefix));
   if (!rule) {
     return null;
   }
 
-  const keyBase =
-    rule.keyType === "ip" ? `ip:${getRequestIp(request)}` : await getUserRateLimitKey(request);
+  const keyBase = `ip:${getRequestIp(request)}`;
   const now = Date.now();
   const store = getRateLimitStore();
   const scopedKey = `${rule.prefix}:${keyBase}`;
@@ -169,7 +153,7 @@ function shouldRewriteToPortal(pathname: string): boolean {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const rateLimitedResponse = await applyRateLimit(request);
+  const rateLimitedResponse = applyRateLimit(request);
   if (rateLimitedResponse) {
     return rateLimitedResponse;
   }
@@ -183,23 +167,6 @@ export async function proxy(request: NextRequest) {
 
   if (isPublicPath(pathname) || !isProtectedPath(pathname)) {
     return NextResponse.next();
-  }
-
-  const session = await auth.api.getSession({
-    headers: request.headers,
-  });
-
-  if (!session) {
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("returnTo", pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  if (matchesPrefix(pathname, "/admin")) {
-    const role = (session.user as { role?: string }).role;
-    if (!isAdminUserRole(role)) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
-    }
   }
 
   if (shouldRewriteToPortal(pathname)) {

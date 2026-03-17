@@ -74,7 +74,6 @@ const acceptSchema = z.object({
 });
 
 type ElectionNominationsClientProps = {
-  cycleId: string;
   positions: PositionItem[];
   nominationsByPosition: Record<string, NominationCard[]>;
   viewerNominations: ViewerNomination[];
@@ -84,7 +83,6 @@ type ElectionNominationsClientProps = {
 };
 
 export function ElectionNominationsClient({
-  cycleId,
   positions,
   nominationsByPosition,
   viewerNominations,
@@ -106,7 +104,6 @@ export function ElectionNominationsClient({
 
   const selectedPositionId = tab || activePositionId;
   const selectedPosition = positions.find((position) => position.id === selectedPositionId) ?? positions[0];
-  const selectedNominations = selectedPosition ? nominationsByPosition[selectedPosition.id] ?? [] : [];
 
   const selfNominationForPosition = viewerNominations.find(
     (nomination) => nomination.positionId === selectedPosition?.id && nomination.nomineeId === viewerId,

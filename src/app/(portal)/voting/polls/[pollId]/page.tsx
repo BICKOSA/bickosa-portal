@@ -37,7 +37,7 @@ export default async function PollPage({ params }: PageProps) {
   return (
     <section className="space-y-5">
       <p className="rounded-[var(--r-md)] border border-[var(--border)] bg-[var(--white)] px-4 py-3 text-sm text-[var(--text-2)]">
-        Your participation is recorded for quorum and audit purposes in accordance with Uganda's Data
+        Your participation is recorded for quorum and audit purposes in accordance with Uganda&apos;s Data
         Protection and Privacy Act, 2019. Your specific ballot choice is kept confidential.
       </p>
       <Card>
