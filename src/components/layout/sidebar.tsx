@@ -49,6 +49,7 @@ const baseNavGroups: Array<{ label: string; items: NavItem[] }> = [
     items: [
       { label: "Alumni Directory", href: "/directory", icon: Users },
       { label: "Mentorship", href: "/mentorship", icon: Handshake },
+      { label: "Committees", href: "/committees", icon: Users },
     ],
   },
   {
@@ -89,6 +90,7 @@ const adminNavGroup: { label: string; items: NavItem[] } = {
     { label: "Campaigns", href: "/admin/campaigns", icon: FileText },
     { label: "Elections", href: "/admin/elections", icon: Vote },
     { label: "Polls", href: "/admin/polls", icon: Vote },
+    { label: "Committees", href: "/admin/committees", icon: Users },
   ],
 };
 
@@ -109,6 +111,7 @@ const mobileAdminNavItems: NavItem[] = [
   { label: "Careers", href: "/admin/careers", icon: BriefcaseBusiness },
   { label: "Events", href: "/admin/events", icon: CalendarCheck2 },
   { label: "Elections", href: "/admin/elections", icon: Vote },
+  { label: "Committees", href: "/admin/committees", icon: Users },
   { label: "Donate", href: "/admin/donations", icon: HeartHandshake },
   { label: "Profile", href: "/profile", icon: UserCircle2 },
 ];

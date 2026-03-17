@@ -160,6 +160,19 @@ export const pollTargetAudienceEnum = pgEnum("poll_target_audience", [
   "verified_only",
   "chapter",
 ]);
+export const committeeStatusEnum = pgEnum("committee_status", [
+  "draft",
+  "nominations_open",
+  "nominations_closed",
+  "active",
+  "dissolved",
+]);
+export const committeeNominationStatusEnum = pgEnum("committee_nomination_status", [
+  "pending",
+  "confirmed_willing",
+  "declined",
+  "appointed",
+]);
 
 export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -335,6 +348,7 @@ export const consentLogs = pgTable("consent_logs", {
   action: varchar("action", { length: 64 }),
   resourceType: varchar("resource_type", { length: 64 }),
   resourceId: uuid("resource_id"),
+  metadata: jsonb("metadata").$type<Record<string, string | number | boolean | null>>(),
   ipAddress: varchar("ip_address", { length: 64 }),
   userAgent: text("user_agent"),
   createdAt: timestamp("created_at", { withTimezone: true })
@@ -910,6 +924,86 @@ export const governanceAppointments = pgTable("governance_appointments", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
+export const committees = pgTable(
+  "committees",
+  {
+    id: uuid("id").default(sql`uuid_generate_v4()`).primaryKey(),
+    name: text("name").notNull(),
+    purpose: text("purpose").notNull(),
+    maxMembers: integer("max_members"),
+    nominationOpens: timestamp("nomination_opens", { withTimezone: true }).notNull(),
+    nominationCloses: timestamp("nomination_closes", { withTimezone: true }).notNull(),
+    status: committeeStatusEnum("status").default("draft").notNull(),
+    createdBy: uuid("created_by").references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    statusIdx: index("committees_status_idx").on(table.status),
+    nominationWindowIdx: index("committees_nomination_window_idx").on(
+      table.nominationOpens,
+      table.nominationCloses,
+    ),
+  }),
+);
+
+export const committeeNominations = pgTable(
+  "committee_nominations",
+  {
+    id: uuid("id").default(sql`uuid_generate_v4()`).primaryKey(),
+    committeeId: uuid("committee_id")
+      .notNull()
+      .references(() => committees.id, { onDelete: "cascade" }),
+    nomineeId: uuid("nominee_id")
+      .notNull()
+      .references(() => users.id),
+    nominatedById: uuid("nominated_by_id")
+      .notNull()
+      .references(() => users.id),
+    reason: text("reason"),
+    status: committeeNominationStatusEnum("status").default("pending").notNull(),
+    confirmationSentAt: timestamp("confirmation_sent_at", { withTimezone: true }),
+    respondedAt: timestamp("responded_at", { withTimezone: true }),
+    responseNote: text("response_note"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    committeeNomineeUnique: uniqueIndex("committee_nominations_committee_nominee_unique").on(
+      table.committeeId,
+      table.nomineeId,
+    ),
+    committeeStatusIdx: index("committee_nominations_committee_status_idx").on(
+      table.committeeId,
+      table.status,
+    ),
+    nominatedByIdx: index("committee_nominations_nominated_by_idx").on(table.nominatedById),
+    nomineeIdx: index("committee_nominations_nominee_idx").on(table.nomineeId),
+  }),
+);
+
+export const committeeMembers = pgTable(
+  "committee_members",
+  {
+    id: uuid("id").default(sql`uuid_generate_v4()`).primaryKey(),
+    committeeId: uuid("committee_id")
+      .notNull()
+      .references(() => committees.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    role: text("role").default("Member").notNull(),
+    appointedAt: timestamp("appointed_at", { withTimezone: true }).defaultNow().notNull(),
+    appointedBy: uuid("appointed_by").references(() => users.id),
+  },
+  (table) => ({
+    committeeMemberUnique: uniqueIndex("committee_members_committee_user_unique").on(
+      table.committeeId,
+      table.userId,
+    ),
+    committeeIdx: index("committee_members_committee_idx").on(table.committeeId),
+  }),
+);
+
 export type User = InferSelectModel<typeof users>;
 export type NewUser = InferInsertModel<typeof users>;
 export type Session = InferSelectModel<typeof sessions>;
@@ -978,3 +1072,9 @@ export type PollVote = InferSelectModel<typeof pollVotes>;
 export type NewPollVote = InferInsertModel<typeof pollVotes>;
 export type GovernanceAppointment = InferSelectModel<typeof governanceAppointments>;
 export type NewGovernanceAppointment = InferInsertModel<typeof governanceAppointments>;
+export type Committee = InferSelectModel<typeof committees>;
+export type NewCommittee = InferInsertModel<typeof committees>;
+export type CommitteeNomination = InferSelectModel<typeof committeeNominations>;
+export type NewCommitteeNomination = InferInsertModel<typeof committeeNominations>;
+export type CommitteeMember = InferSelectModel<typeof committeeMembers>;
+export type NewCommitteeMember = InferInsertModel<typeof committeeMembers>;

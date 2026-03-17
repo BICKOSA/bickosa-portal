@@ -23,6 +23,10 @@ export const notificationTypes = [
   "voting_open",
   "poll_open",
   "results_published",
+  "committee_nominations_open",
+  "committee_nomination_accepted",
+  "committee_nomination_declined",
+  "committee_appointed",
 ] as const;
 
 export type NotificationType = (typeof notificationTypes)[number];
@@ -42,6 +46,10 @@ export const notificationTitleTemplates: Record<NotificationType, string> = {
   voting_open: "Voting is now open",
   poll_open: "A new poll is open",
   results_published: "Election results published",
+  committee_nominations_open: "Committee nominations are now open",
+  committee_nomination_accepted: "Committee nomination accepted",
+  committee_nomination_declined: "Committee nomination declined",
+  committee_appointed: "You were appointed to a committee",
 };
 
 export type CreateNotificationInput = {
