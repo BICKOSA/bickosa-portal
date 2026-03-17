@@ -6,6 +6,7 @@ import { Plus, Search } from "lucide-react";
 
 import { NotificationPanel } from "@/components/layout/notification-panel";
 import { Avatar } from "@/components/ui/avatar";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 
 type TopbarUser = {
@@ -42,12 +43,13 @@ export function Topbar({ user }: { user: TopbarUser }) {
   const pageTitle = getPageTitle(pathname);
 
   return (
-    <header className="sticky top-0 z-20 flex h-[60px] items-center gap-4 border-b border-[var(--border)] bg-[var(--white)] px-4 sm:px-6 lg:px-8">
-      <h1 className="min-w-0 truncate font-[var(--font-ui)] text-[1.05rem] font-bold text-[var(--navy-900)]">
+    <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-[var(--border)] bg-[var(--white)] px-4 sm:px-6">
+      <SidebarTrigger className="md:hidden" />
+      <h1 className="min-w-0 truncate font-[var(--font-ui)] text-base font-semibold text-[var(--navy-900)]">
         {pageTitle}
       </h1>
 
-      <div className="mx-auto hidden max-w-xl flex-1 md:flex">
+      <div className="mx-auto hidden max-w-xl flex-1 lg:flex">
         <label className="relative w-full">
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[var(--text-3)]" />
           <input

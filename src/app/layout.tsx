@@ -5,10 +5,14 @@ import { Analytics } from "@vercel/analytics/next";
 import { cn } from "@/lib/utils";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+const metadataBase = new URL(
+  process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+);
 
 export const metadata: Metadata = {
   title: "BICKOSA Alumni Portal",
   description: "Digital home for BICKOSA alumni",
+  metadataBase,
   icons: {
     icon: [
       { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },

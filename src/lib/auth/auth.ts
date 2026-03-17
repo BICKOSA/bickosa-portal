@@ -17,11 +17,27 @@ import {
 
 const appName = "BICKOSA Alumni Portal";
 const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+const isDevelopment = process.env.NODE_ENV === "development";
+
+const trustedOrigins = [appUrl, process.env.BETTER_AUTH_URL].filter(
+  (origin): origin is string => Boolean(origin),
+);
+
+if (isDevelopment) {
+  trustedOrigins.push(
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3001",
+    "http://localhost:3002",
+    "http://127.0.0.1:3002",
+  );
+}
 
 export const auth = betterAuth({
   appName,
   baseURL: appUrl,
-  trustedOrigins: appUrl ? [appUrl] : [],
+  trustedOrigins: Array.from(new Set(trustedOrigins)),
   advanced: {
     database: {
       generateId: "uuid",

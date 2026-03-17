@@ -5,6 +5,7 @@ import { eq, desc } from "drizzle-orm";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { QueryProvider } from "@/components/providers/query-provider";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { ToastProvider } from "@/components/ui/toast";
 import { auth } from "@/lib/auth/auth";
 import { db } from "@/lib/db";
@@ -88,15 +89,15 @@ export default async function PortalLayout({ children }: PortalLayoutProps) {
   return (
     <ToastProvider>
       <QueryProvider>
-        <div className="min-h-screen bg-[var(--surface)] text-[var(--text-1)]">
+        <SidebarProvider>
           <Sidebar user={user} />
-          <div className="flex min-h-screen flex-col lg:pl-[252px]">
+          <SidebarInset className="min-h-screen bg-[var(--surface)] text-[var(--text-1)]">
             <Topbar user={user} />
-            <main className="flex-1 px-4 py-6 pb-24 sm:px-6 lg:px-8 lg:pb-8">
+            <main className="flex-1 px-4 py-6 pb-8 sm:px-6 lg:px-8">
               {gatedContent ?? children}
             </main>
-          </div>
-        </div>
+          </SidebarInset>
+        </SidebarProvider>
       </QueryProvider>
     </ToastProvider>
   );
