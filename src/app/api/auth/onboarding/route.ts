@@ -9,6 +9,7 @@ import {
   privacySettings,
   users,
 } from "@/lib/db/schema";
+import { trackPortalEvent } from "@/lib/analytics/server";
 
 const onboardingSchema = z
   .object({
@@ -148,6 +149,16 @@ export async function POST(request: Request) {
           granted: payload.consent.photography,
         },
       ]);
+    });
+
+    await trackPortalEvent({
+      event: "user_registered",
+      userId: user.id,
+      properties: {
+        yearOfCompletion: payload.yearOfCompletion,
+        industry: payload.industry,
+        country: payload.locationCountry,
+      },
     });
 
     return NextResponse.json({ success: true });

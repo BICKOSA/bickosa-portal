@@ -27,6 +27,7 @@ const titleMatchers: Array<{ match: string; title: string }> = [
   { match: "/governance", title: "Governance & Docs" },
   { match: "/admin/members", title: "Admin Members" },
   { match: "/admin/careers", title: "Admin Careers" },
+  { match: "/admin/analytics", title: "Admin Analytics" },
   { match: "/admin/dashboard", title: "Admin Dashboard" },
   { match: "/admin", title: "Admin" },
 ];

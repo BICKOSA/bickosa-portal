@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth/auth";
+import { trackPortalEvent } from "@/lib/analytics/server";
 import { db } from "@/lib/db";
 import { alumniProfiles, mentorshipRequests, users } from "@/lib/db/schema";
 import { sendMentorshipRequestEmail } from "@/lib/email/resend";
@@ -147,7 +148,7 @@ export async function POST(request: Request) {
         createdAt: mentorshipRequests.createdAt,
       });
 
-    const [mentorUser, requesterProfile] = await Promise.all([
+    const [mentorUser, requesterProfile, mentorUserProfile] = await Promise.all([
       db.query.users.findFirst({
         where: eq(users.id, payload.mentorId),
         columns: {
@@ -159,6 +160,13 @@ export async function POST(request: Request) {
         columns: {
           firstName: true,
           lastName: true,
+          yearOfCompletion: true,
+        },
+      }),
+      db.query.alumniProfiles.findFirst({
+        where: eq(alumniProfiles.userId, payload.mentorId),
+        columns: {
+          yearOfCompletion: true,
         },
       }),
     ]);
@@ -174,6 +182,16 @@ export async function POST(request: Request) {
       body: `${requesterName} sent you a mentorship request in ${payload.field}.`,
       actionUrl: "/mentorship/my-requests",
       idempotencyKey: `mentorship_request:${createdRequest.id}:${payload.mentorId}`,
+    });
+
+    await trackPortalEvent({
+      event: "mentorship_request_sent",
+      userId: session.user.id,
+      properties: {
+        mentor_class: mentorUserProfile?.yearOfCompletion ?? "unknown",
+        mentee_class: requesterProfile?.yearOfCompletion ?? "unknown",
+        field: payload.field,
+      },
     });
 
     if (mentorUser?.email) {

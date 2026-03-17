@@ -3,6 +3,7 @@ import {
   bigint,
   boolean,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   text,
@@ -654,6 +655,16 @@ export const notifications = pgTable("notifications", {
     .notNull(),
 });
 
+export const portalAnalyticsEvents = pgTable("portal_analytics_events", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  eventName: varchar("event_name", { length: 120 }).notNull(),
+  userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+  properties: jsonb("properties").$type<Record<string, string | number | boolean | null>>().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
 export const notificationDispatchLog = pgTable(
   "notification_dispatch_log",
   {
@@ -723,5 +734,7 @@ export type DocumentDownloadLog = InferSelectModel<typeof documentDownloadLogs>;
 export type NewDocumentDownloadLog = InferInsertModel<typeof documentDownloadLogs>;
 export type Notification = InferSelectModel<typeof notifications>;
 export type NewNotification = InferInsertModel<typeof notifications>;
+export type PortalAnalyticsEvent = InferSelectModel<typeof portalAnalyticsEvents>;
+export type NewPortalAnalyticsEvent = InferInsertModel<typeof portalAnalyticsEvents>;
 export type NotificationDispatchLog = InferSelectModel<typeof notificationDispatchLog>;
 export type NewNotificationDispatchLog = InferInsertModel<typeof notificationDispatchLog>;

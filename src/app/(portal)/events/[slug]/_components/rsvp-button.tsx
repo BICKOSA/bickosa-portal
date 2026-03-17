@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
+import { trackPortalEventClient } from "@/lib/analytics/client";
 import { buildGoogleCalendarUrl, buildIcsContent, getEventCalendarLocation } from "@/lib/events-calendar";
 import type { EventRegistrationStatus } from "@/lib/events";
 
@@ -143,6 +144,13 @@ export function RsvpButton({ event, compact = false }: RsvpButtonProps) {
   }
 
   function downloadIcs() {
+    void trackPortalEventClient({
+      event: "event_calendar_export",
+      properties: {
+        format: "ics",
+      },
+    });
+
     const location = getEventCalendarLocation(event);
     const sourceUrl = `${window.location.origin}/events/${event.slug}`;
     const content = buildIcsContent({
@@ -233,6 +241,12 @@ export function RsvpButton({ event, compact = false }: RsvpButtonProps) {
             <DropdownMenuContent align="end" className="min-w-48">
               <DropdownMenuItem
                 onClick={() => {
+                  void trackPortalEventClient({
+                    event: "event_calendar_export",
+                    properties: {
+                      format: "google",
+                    },
+                  });
                   window.open(googleCalendarUrl, "_blank", "noopener,noreferrer");
                 }}
               >

@@ -2,6 +2,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
 import { sendDonationReceiptEmail } from "@/lib/email/resend";
+import { trackPortalEvent } from "@/lib/analytics/server";
 import { db } from "@/lib/db";
 import { campaigns, consentLogs, donations, users } from "@/lib/db/schema";
 import {
@@ -85,6 +86,8 @@ export async function completeDonationAndSendReceipt(params: {
         status: "not_found" as const,
         receipt: null,
         donationUserId: null as string | null,
+        donationPaymentMethod: null as string | null,
+        campaignType: null as string | null,
         campaignMilestone: null as
           | {
               shouldNotify: boolean;
@@ -102,6 +105,8 @@ export async function completeDonationAndSendReceipt(params: {
         status: "already_completed" as const,
         receipt,
         donationUserId: donation.userId,
+        donationPaymentMethod: donation.paymentMethod,
+        campaignType: null as string | null,
         campaignMilestone: null as
           | {
               shouldNotify: boolean;
@@ -118,6 +123,7 @@ export async function completeDonationAndSendReceipt(params: {
       columns: {
         title: true,
         slug: true,
+        projectType: true,
         goalAmount: true,
         raisedAmount: true,
         isPublished: true,
@@ -157,6 +163,8 @@ export async function completeDonationAndSendReceipt(params: {
         status: "already_completed" as const,
         receipt,
         donationUserId: donation.userId,
+        donationPaymentMethod: donation.paymentMethod,
+        campaignType: campaign?.projectType ?? null,
         campaignMilestone: null as
           | {
               shouldNotify: boolean;
@@ -189,6 +197,8 @@ export async function completeDonationAndSendReceipt(params: {
       status: "completed" as const,
       receipt,
       donationUserId: donation.userId,
+      donationPaymentMethod: donation.paymentMethod,
+      campaignType: campaign?.projectType ?? null,
       campaignMilestone:
         crossedHalfway && campaign
           ? {
@@ -238,6 +248,16 @@ export async function completeDonationAndSendReceipt(params: {
       idempotencyKey: `donation_received:${completion.receipt.donationId}:${completion.donationUserId}`,
     });
   }
+
+  await trackPortalEvent({
+    event: "donation_completed",
+    userId: completion.donationUserId,
+    properties: {
+      amount_ugx: Number(completion.receipt.amount),
+      campaign_type: completion.campaignType ?? "unknown",
+      payment_method: completion.donationPaymentMethod ?? "unknown",
+    },
+  });
 
   if (completion.campaignMilestone?.shouldNotify) {
     const recipients = await listAllNotificationRecipientUserIds();

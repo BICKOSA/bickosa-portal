@@ -11,6 +11,7 @@ import { AuthPageShell } from "@/components/auth/auth-page-shell";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { trackPortalEventClient } from "@/lib/analytics/client";
 
 const loginSchema = z.object({
   email: z.email("Enter a valid email address."),
@@ -71,6 +72,13 @@ function LoginPageContent() {
       setFormError(body?.message ?? "Invalid credentials.");
       return;
     }
+
+    await trackPortalEventClient({
+      event: "user_login",
+      properties: {
+        method: "email",
+      },
+    });
 
     const returnTo = normalizeReturnTo(searchParams.get("returnTo"));
     router.push(returnTo);

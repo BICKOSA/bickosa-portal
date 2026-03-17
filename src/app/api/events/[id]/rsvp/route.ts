@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth/auth";
+import { trackPortalEvent } from "@/lib/analytics/server";
 import { db } from "@/lib/db";
 import { alumniProfiles, eventRegistrations } from "@/lib/db/schema";
 import { getEventForRsvpValidation } from "@/lib/events";
@@ -155,6 +156,16 @@ export async function POST(_request: Request, context: RouteContext) {
     });
 
   if (!wasAlreadyAttending) {
+    await trackPortalEvent({
+      event: "event_rsvp",
+      userId: session.user.id,
+      properties: {
+        event_type: event.type,
+        event_id: event.id,
+        is_paid: event.ticketPrice > 0,
+      },
+    });
+
     await createNotification({
       userId: session.user.id,
       type: "rsvp_confirmed",
@@ -212,6 +223,14 @@ export async function DELETE(_request: Request, context: RouteContext) {
       updatedAt: new Date(),
     })
     .where(and(eq(eventRegistrations.eventId, eventId), eq(eventRegistrations.userId, session.user.id)));
+
+  await trackPortalEvent({
+    event: "event_rsvp_cancelled",
+    userId: session.user.id,
+    properties: {
+      event_id: event.id,
+    },
+  });
 
   const updatedCount = await getAttendeeCount(eventId);
   return NextResponse.json({

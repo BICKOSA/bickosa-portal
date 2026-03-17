@@ -2,12 +2,17 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { Linkedin } from "lucide-react";
+import { eq } from "drizzle-orm";
 
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DirectoryContactEmail } from "@/app/(portal)/directory/[id]/_components/directory-contact-email";
+import { trackPortalEvent } from "@/lib/analytics/server";
 import { auth } from "@/lib/auth/auth";
+import { db } from "@/lib/db";
+import { alumniProfiles } from "@/lib/db/schema";
 import { getDirectoryProfileById, getViewerIsVerified } from "@/lib/directory";
 
 type AlumniProfilePageProps = {
@@ -40,6 +45,35 @@ export default async function AlumniProfilePage({ params }: AlumniProfilePagePro
   if (!profile) {
     notFound();
   }
+
+  const [viewerProfile, viewedProfileMeta] = await Promise.all([
+    db.query.alumniProfiles.findFirst({
+      where: eq(alumniProfiles.userId, session.user.id),
+      columns: {
+        chapterId: true,
+      },
+    }),
+    db.query.alumniProfiles.findFirst({
+      where: eq(alumniProfiles.id, profile.id),
+      columns: {
+        chapterId: true,
+        yearOfCompletion: true,
+      },
+    }),
+  ]);
+
+  await trackPortalEvent({
+    event: "alumni_profile_viewed",
+    userId: session.user.id,
+    properties: {
+      viewed_user_class: viewedProfileMeta?.yearOfCompletion ?? "unknown",
+      same_chapter: Boolean(
+        viewerProfile?.chapterId &&
+          viewedProfileMeta?.chapterId &&
+          viewerProfile.chapterId === viewedProfileMeta.chapterId,
+      ),
+    },
+  });
 
   return (
     <section className="space-y-5">
@@ -105,9 +139,7 @@ export default async function AlumniProfilePage({ params }: AlumniProfilePagePro
             {profile.email ? (
               <div>
                 <p className="text-xs uppercase tracking-wide text-[var(--text-3)]">Email</p>
-                <a className="mt-1 inline-block text-[var(--navy-700)] hover:underline" href={`mailto:${profile.email}`}>
-                  {profile.email}
-                </a>
+                <DirectoryContactEmail email={profile.email} />
               </div>
             ) : null}
 

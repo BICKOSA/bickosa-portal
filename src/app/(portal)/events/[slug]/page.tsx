@@ -9,6 +9,7 @@ import { RsvpButton } from "@/app/(portal)/events/[slug]/_components/rsvp-button
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { trackPortalEvent } from "@/lib/analytics/server";
 import { auth } from "@/lib/auth/auth";
 import { formatEventTypeLabel, getEventDetailBySlug } from "@/lib/events";
 
@@ -66,6 +67,15 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
   if (!event) {
     notFound();
   }
+
+  await trackPortalEvent({
+    event: "event_page_viewed",
+    userId: session.user.id,
+    properties: {
+      event_id: event.id,
+      event_type: event.type,
+    },
+  });
 
   const dateLabel = DATE_TIME_FORMATTER.format(event.startAt);
   const locationLabel = event.isOnline

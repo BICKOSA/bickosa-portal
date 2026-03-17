@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   ShieldCheck,
+  BarChart3,
   BriefcaseBusiness,
   CalendarCheck2,
   FileText,
@@ -78,6 +79,7 @@ const adminNavGroup: { label: string; items: NavItem[] } = {
   label: "Admin",
   items: [
     { label: "Admin Dashboard", href: "/admin", icon: ShieldCheck },
+    { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
     { label: "Member Verification", href: "/admin/members", icon: Users },
     { label: "Careers Queue", href: "/admin/careers", icon: BriefcaseBusiness },
     { label: "Donations", href: "/admin/donations", icon: HeartHandshake },
@@ -97,6 +99,7 @@ const mobileNavItems: NavItem[] = [
 
 const mobileAdminNavItems: NavItem[] = [
   { label: "Admin", href: "/admin", icon: ShieldCheck },
+  { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
   { label: "Members", href: "/admin/members", icon: Users },
   { label: "Careers", href: "/admin/careers", icon: BriefcaseBusiness },
   { label: "Events", href: "/admin/events", icon: CalendarCheck2 },

@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 
 import type { ProfileViewData } from "@/app/(portal)/profile/_components/types";
+import { trackPortalEvent } from "@/lib/analytics/server";
 import { auth } from "@/lib/auth/auth";
 import { db } from "@/lib/db";
 import { alumniProfiles, chapters } from "@/lib/db/schema";
@@ -59,6 +60,40 @@ function splitName(fullName: string): { firstName: string; lastName: string } {
     firstName: parts[0],
     lastName: parts.slice(1).join(" "),
   };
+}
+
+function countFilledProfileFields(profile: {
+  firstName: string | null;
+  lastName: string | null;
+  yearOfEntry: number | null;
+  yearOfCompletion: number | null;
+  currentJobTitle: string | null;
+  currentEmployer: string | null;
+  industry: string | null;
+  locationCity: string | null;
+  locationCountry: string | null;
+  phone: string | null;
+  bio: string | null;
+  linkedinUrl: string | null;
+  websiteUrl: string | null;
+}): number {
+  const values = [
+    profile.firstName,
+    profile.lastName,
+    profile.yearOfEntry,
+    profile.yearOfCompletion,
+    profile.currentJobTitle,
+    profile.currentEmployer,
+    profile.industry,
+    profile.locationCity,
+    profile.locationCountry,
+    profile.phone,
+    profile.bio,
+    profile.linkedinUrl,
+    profile.websiteUrl,
+  ];
+
+  return values.filter((value) => value !== null && value !== "").length;
 }
 
 async function getProfileView(userId: string): Promise<ProfileViewData | null> {
@@ -190,6 +225,35 @@ export async function PATCH(request: Request) {
     const updatedProfile = await getProfileView(session.user.id);
     if (!updatedProfile) {
       return NextResponse.json({ message: "Profile was not found after update." }, { status: 500 });
+    }
+
+    const previousCount = existingProfile
+      ? countFilledProfileFields(existingProfile)
+      : 0;
+    const updatedCount = countFilledProfileFields({
+      firstName: updatedProfile.firstName,
+      lastName: updatedProfile.lastName,
+      yearOfEntry: updatedProfile.yearOfEntry,
+      yearOfCompletion: updatedProfile.yearOfCompletion,
+      currentJobTitle: updatedProfile.currentJobTitle,
+      currentEmployer: updatedProfile.currentEmployer,
+      industry: updatedProfile.industry,
+      locationCity: updatedProfile.locationCity,
+      locationCountry: updatedProfile.locationCountry,
+      phone: updatedProfile.phone,
+      bio: updatedProfile.bio,
+      linkedinUrl: updatedProfile.linkedinUrl,
+      websiteUrl: updatedProfile.websiteUrl,
+    });
+
+    if (previousCount < 8 && updatedCount >= 8) {
+      await trackPortalEvent({
+        event: "profile_completed",
+        userId: session.user.id,
+        properties: {
+          fields_filled: updatedCount,
+        },
+      });
     }
 
     return NextResponse.json({

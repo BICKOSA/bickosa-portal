@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth/auth";
+import { trackPortalEvent } from "@/lib/analytics/server";
 import {
   getViewerIsVerified,
   listDirectoryAlumni,
@@ -42,6 +43,22 @@ export async function GET(request: Request) {
   const { alumni, total } = await listDirectoryAlumni({
     viewerIsVerified,
     query,
+  });
+
+  const filtersActive =
+    Number(Boolean(query.yearFrom)) +
+    Number(Boolean(query.yearTo)) +
+    Number(Boolean(query.country)) +
+    Number(Boolean(query.industry)) +
+    Number(Boolean(query.chapter));
+
+  await trackPortalEvent({
+    event: "directory_search",
+    userId: session.user.id,
+    properties: {
+      query_length: query.search.length,
+      filters_active: filtersActive,
+    },
   });
 
   return NextResponse.json({

@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth/auth";
+import { trackPortalEvent } from "@/lib/analytics/server";
 import { completeDonationAndSendReceipt } from "@/lib/donations";
 import { db } from "@/lib/db";
 import { alumniProfiles, campaigns, donations, privacySettings, users } from "@/lib/db/schema";
@@ -34,6 +35,7 @@ export async function POST(request: Request) {
       where: and(eq(campaigns.id, payload.campaignId), eq(campaigns.isPublished, true)),
       columns: {
         id: true,
+        projectType: true,
       },
     });
 
@@ -91,6 +93,15 @@ export async function POST(request: Request) {
           updatedAt: new Date(),
         },
       });
+
+    await trackPortalEvent({
+      event: "donation_started",
+      userId: session.user.id,
+      properties: {
+        campaign_id: payload.campaignId,
+        campaign_type: campaign.projectType,
+      },
+    });
 
     if (payload.simulateSuccess) {
       await completeDonationAndSendReceipt({

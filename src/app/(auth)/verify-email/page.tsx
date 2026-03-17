@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 
 import { AuthPageShell } from "@/components/auth/auth-page-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { trackPortalEventClient } from "@/lib/analytics/client";
 
 type VerifyState = "pending" | "verifying" | "verified" | "error";
 
@@ -16,6 +17,7 @@ function VerifyEmailPageContent() {
   const [email, setEmail] = useState(searchParams.get("email") ?? "");
   const [state, setState] = useState<VerifyState>("pending");
   const [message, setMessage] = useState<string | null>(null);
+  const hasTrackedVerification = useRef(false);
 
   const token = useMemo(() => searchParams.get("token"), [searchParams]);
   const error = useMemo(() => searchParams.get("error"), [searchParams]);
@@ -25,6 +27,10 @@ function VerifyEmailPageContent() {
     if (verified === "true") {
       setState("verifying");
       setMessage("Email verified. Redirecting to your portal...");
+      if (!hasTrackedVerification.current) {
+        hasTrackedVerification.current = true;
+        void trackPortalEventClient({ event: "email_verified" });
+      }
 
       const redirectIfSignedIn = async () => {
         const sessionResponse = await fetch("/api/auth/get-session");
@@ -75,6 +81,10 @@ function VerifyEmailPageContent() {
       if (response.ok) {
         setState("verified");
         setMessage("Email verified successfully. You can now sign in.");
+        if (!hasTrackedVerification.current) {
+          hasTrackedVerification.current = true;
+          void trackPortalEventClient({ event: "email_verified" });
+        }
         return;
       }
 

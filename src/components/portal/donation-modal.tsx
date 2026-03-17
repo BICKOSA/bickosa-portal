@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/toast";
+import { trackPortalEventClient } from "@/lib/analytics/client";
 import { cn } from "@/lib/utils";
 
 type PaymentMethod = "mtn_momo" | "airtel_money" | "visa" | "mastercard" | "bank_transfer";
@@ -179,6 +180,18 @@ export function DonationModal({
       });
       return;
     }
+
+    if (step === 1 && selectedCampaign) {
+      void trackPortalEventClient({
+        event: "donation_amount_selected",
+        properties: {
+          campaign_id: selectedCampaign.id,
+          campaign_slug: selectedCampaign.slug,
+          amount_ugx: resolvedAmount,
+        },
+      });
+    }
+
     setStep((previous) => Math.min(4, previous + 1));
   }
 
@@ -190,6 +203,25 @@ export function DonationModal({
     <Dialog
       open={open}
       onOpenChange={(nextOpen) => {
+        if (nextOpen && selectedCampaign) {
+          void trackPortalEventClient({
+            event: "donation_modal_opened",
+            properties: {
+              campaign_id: selectedCampaign.id,
+              campaign_slug: selectedCampaign.slug,
+            },
+          });
+        }
+
+        if (!nextOpen && open && step >= 1 && step <= 3) {
+          void trackPortalEventClient({
+            event: "donation_modal_abandoned",
+            properties: {
+              step,
+            },
+          });
+        }
+
         setOpen(nextOpen);
         if (!nextOpen) {
           resetState();

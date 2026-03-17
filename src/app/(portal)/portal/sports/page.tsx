@@ -5,6 +5,7 @@ import { FixturesList } from "@/app/(portal)/portal/sports/_components/fixtures-
 import { StandingsTable } from "@/app/(portal)/portal/sports/_components/standings-table";
 import { TopScorers } from "@/app/(portal)/portal/sports/_components/top-scorers";
 import { Badge } from "@/components/ui/badge";
+import { trackPortalEvent } from "@/lib/analytics/server";
 import { auth } from "@/lib/auth/auth";
 import { getSportsDashboardData } from "@/lib/sports";
 
@@ -38,6 +39,23 @@ export default async function SportsPage() {
   }
 
   const { season } = data;
+
+  await Promise.all([
+    trackPortalEvent({
+      event: "standings_viewed",
+      userId: session.user.id,
+      properties: {
+        season_id: season.id,
+      },
+    }),
+    trackPortalEvent({
+      event: "fixture_viewed",
+      userId: session.user.id,
+      properties: {
+        season_id: season.id,
+      },
+    }),
+  ]);
 
   return (
     <section className="space-y-5">

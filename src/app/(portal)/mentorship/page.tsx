@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { MentorCard } from "@/components/portal/mentor-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { trackPortalEvent } from "@/lib/analytics/server";
 import { auth } from "@/lib/auth/auth";
 import { listMentors, normalizeMentorshipQuery, type MentorshipFieldFilter } from "@/lib/mentorship";
 
@@ -36,6 +37,14 @@ export default async function MentorshipPage({ searchParams }: MentorshipPagePro
   const mentors = await listMentors({
     query,
     viewerUserId: session.user.id,
+  });
+
+  await trackPortalEvent({
+    event: "mentor_browse",
+    userId: session.user.id,
+    properties: {
+      filter_field: query.field,
+    },
   });
 
   return (

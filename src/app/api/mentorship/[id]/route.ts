@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth/auth";
+import { trackPortalEvent } from "@/lib/analytics/server";
 import { db } from "@/lib/db";
 import { mentorshipRequests } from "@/lib/db/schema";
 import { createNotification } from "@/lib/notifications/create-notification";
@@ -86,6 +87,14 @@ export async function PATCH(request: Request, context: RouteContext) {
         body: "Your mentorship request was accepted. Open your requests to view next steps.",
         actionUrl: "/mentorship/my-requests",
         idempotencyKey: `mentorship_accepted:${id}:${existing.menteeId}`,
+      });
+
+      await trackPortalEvent({
+        event: "mentorship_request_accepted",
+        userId: session.user.id,
+        properties: {
+          request_id: id,
+        },
       });
     }
 
