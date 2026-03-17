@@ -8,12 +8,14 @@ import {
   BriefcaseBusiness,
   CalendarClock,
   CheckCircle2,
+  CheckSquare,
   HandHeart,
   HeartHandshake,
   Megaphone,
   ShieldCheck,
   ShieldX,
   Target,
+  Vote,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -63,6 +65,15 @@ function getNotificationIcon(type: string) {
       return Megaphone;
     case "campaign_milestone":
       return Target;
+    case "nomination_submitted":
+      return CheckSquare;
+    case "peer_nomination_received":
+      return Vote;
+    case "voting_open":
+    case "poll_open":
+      return Vote;
+    case "results_published":
+      return CheckCircle2;
     default:
       return BriefcaseBusiness;
   }

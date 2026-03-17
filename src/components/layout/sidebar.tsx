@@ -16,6 +16,7 @@ import {
   Trophy,
   UserCircle2,
   Users,
+  Vote,
 } from "lucide-react";
 
 import { Avatar } from "@/components/ui/avatar";
@@ -54,6 +55,7 @@ const baseNavGroups: Array<{ label: string; items: NavItem[] }> = [
     label: "Engage",
     items: [
       { label: "Events & RSVPs", href: "/events", icon: CalendarCheck2 },
+      { label: "Voting", href: "/voting", icon: Vote },
       { label: "Careers", href: "/careers", icon: BriefcaseBusiness },
       { label: "Sports League", href: "/sports", icon: Trophy, badge: "Soon" },
     ],
@@ -93,6 +95,7 @@ const mobileNavItems: NavItem[] = [
   { label: "Directory", href: "/directory", icon: Users },
   { label: "Careers", href: "/careers", icon: BriefcaseBusiness },
   { label: "Events", href: "/events", icon: CalendarCheck2 },
+  { label: "Voting", href: "/voting", icon: Vote },
   { label: "Donate", href: "/donate", icon: HeartHandshake },
   { label: "Profile", href: "/profile", icon: UserCircle2 },
 ];

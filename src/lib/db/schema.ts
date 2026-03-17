@@ -2,6 +2,8 @@ import { sql, type InferInsertModel, type InferSelectModel } from "drizzle-orm";
 import {
   bigint,
   boolean,
+  date,
+  index,
   integer,
   jsonb,
   pgEnum,
@@ -127,6 +129,36 @@ export const deletionRequestStatusEnum = pgEnum("deletion_request_status", [
   "processing",
   "completed",
   "rejected",
+]);
+export const electionCycleStatusEnum = pgEnum("election_cycle_status", [
+  "draft",
+  "nominations_open",
+  "nominations_closed",
+  "voting_open",
+  "voting_closed",
+  "results_published",
+]);
+export const nominationStatusEnum = pgEnum("nomination_status", [
+  "pending",
+  "approved",
+  "rejected",
+  "withdrawn",
+]);
+export const pollTypeEnum = pgEnum("poll_type", [
+  "yes_no_abstain",
+  "multiple_choice",
+  "ranked_choice",
+]);
+export const pollStatusEnum = pgEnum("poll_status", [
+  "draft",
+  "open",
+  "closed",
+  "results_published",
+]);
+export const pollTargetAudienceEnum = pgEnum("poll_target_audience", [
+  "all_members",
+  "verified_only",
+  "chapter",
 ]);
 
 export const users = pgTable("users", {
@@ -712,6 +744,169 @@ export const notificationDispatchLog = pgTable(
   }),
 );
 
+export const electionCycles = pgTable(
+  "election_cycles",
+  {
+    id: uuid("id").default(sql`uuid_generate_v4()`).primaryKey(),
+    title: text("title").notNull(),
+    description: text("description"),
+    nominationOpens: timestamp("nomination_opens", { withTimezone: true }).notNull(),
+    nominationCloses: timestamp("nomination_closes", { withTimezone: true }).notNull(),
+    votingOpens: timestamp("voting_opens", { withTimezone: true }).notNull(),
+    votingCloses: timestamp("voting_closes", { withTimezone: true }).notNull(),
+    resultsPublished: boolean("results_published").default(false).notNull(),
+    status: electionCycleStatusEnum("status").default("draft").notNull(),
+    quorumPercent: integer("quorum_percent").default(25).notNull(),
+    createdBy: uuid("created_by").references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    statusIdx: index("election_cycles_status_idx").on(table.status),
+  }),
+);
+
+export const electionPositions = pgTable("election_positions", {
+  id: uuid("id").default(sql`uuid_generate_v4()`).primaryKey(),
+  electionCycleId: uuid("election_cycle_id")
+    .notNull()
+    .references(() => electionCycles.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  description: text("description"),
+  maxWinners: integer("max_winners").default(1).notNull(),
+  maxNominations: integer("max_nominations").default(10).notNull(),
+  sortOrder: integer("sort_order").default(0).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const nominations = pgTable(
+  "nominations",
+  {
+    id: uuid("id").default(sql`uuid_generate_v4()`).primaryKey(),
+    electionCycleId: uuid("election_cycle_id")
+      .notNull()
+      .references(() => electionCycles.id, { onDelete: "cascade" }),
+    positionId: uuid("position_id")
+      .notNull()
+      .references(() => electionPositions.id, { onDelete: "cascade" }),
+    nomineeId: uuid("nominee_id")
+      .notNull()
+      .references(() => users.id),
+    nominatedById: uuid("nominated_by_id")
+      .notNull()
+      .references(() => users.id),
+    manifesto: text("manifesto"),
+    status: nominationStatusEnum("status").default("pending").notNull(),
+    reviewedBy: uuid("reviewed_by").references(() => users.id),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    reviewNote: text("review_note"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    positionNomineeUnique: uniqueIndex("nominations_position_nominee_unique").on(
+      table.positionId,
+      table.nomineeId,
+    ),
+    cycleStatusIdx: index("nominations_election_cycle_status_idx").on(
+      table.electionCycleId,
+      table.status,
+    ),
+    nomineeIdx: index("nominations_nominee_id_idx").on(table.nomineeId),
+  }),
+);
+
+export const electionVotes = pgTable(
+  "election_votes",
+  {
+    id: uuid("id").default(sql`uuid_generate_v4()`).primaryKey(),
+    electionCycleId: uuid("election_cycle_id")
+      .notNull()
+      .references(() => electionCycles.id, { onDelete: "cascade" }),
+    positionId: uuid("position_id")
+      .notNull()
+      .references(() => electionPositions.id, { onDelete: "cascade" }),
+    voterId: uuid("voter_id")
+      .notNull()
+      .references(() => users.id),
+    nomineeId: uuid("nominee_id")
+      .notNull()
+      .references(() => nominations.id),
+    castAt: timestamp("cast_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    positionVoterUnique: uniqueIndex("election_votes_position_voter_unique").on(
+      table.positionId,
+      table.voterId,
+    ),
+    cycleVoterIdx: index("election_votes_election_cycle_voter_idx").on(
+      table.electionCycleId,
+      table.voterId,
+    ),
+  }),
+);
+
+export const generalPolls = pgTable(
+  "general_polls",
+  {
+    id: uuid("id").default(sql`uuid_generate_v4()`).primaryKey(),
+    title: text("title").notNull(),
+    description: text("description"),
+    pollType: pollTypeEnum("poll_type").default("yes_no_abstain").notNull(),
+    options: jsonb("options").$type<string[] | null>(),
+    isAnonymous: boolean("is_anonymous").default(false).notNull(),
+    votingOpens: timestamp("voting_opens", { withTimezone: true }).notNull(),
+    votingCloses: timestamp("voting_closes", { withTimezone: true }).notNull(),
+    quorumPercent: integer("quorum_percent").default(10).notNull(),
+    resultsPublished: boolean("results_published").default(false).notNull(),
+    status: pollStatusEnum("status").default("draft").notNull(),
+    createdBy: uuid("created_by").references(() => users.id),
+    targetAudience: pollTargetAudienceEnum("target_audience").default("verified_only").notNull(),
+    chapterId: uuid("chapter_id").references(() => chapters.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    statusIdx: index("general_polls_status_idx").on(table.status),
+    votingWindowIdx: index("general_polls_voting_window_idx").on(
+      table.votingOpens,
+      table.votingCloses,
+    ),
+  }),
+);
+
+export const pollVotes = pgTable(
+  "poll_votes",
+  {
+    id: uuid("id").default(sql`uuid_generate_v4()`).primaryKey(),
+    pollId: uuid("poll_id")
+      .notNull()
+      .references(() => generalPolls.id, { onDelete: "cascade" }),
+    voterId: uuid("voter_id")
+      .notNull()
+      .references(() => users.id),
+    choice: jsonb("choice").$type<string | string[]>().notNull(),
+    castAt: timestamp("cast_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    pollVoterUnique: uniqueIndex("poll_votes_poll_voter_unique").on(table.pollId, table.voterId),
+    pollIdIdx: index("poll_votes_poll_id_idx").on(table.pollId),
+  }),
+);
+
+export const governanceAppointments = pgTable("governance_appointments", {
+  id: uuid("id").default(sql`uuid_generate_v4()`).primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id),
+  position: text("position").notNull(),
+  termStart: date("term_start").notNull(),
+  termEnd: date("term_end"),
+  isCurrent: boolean("is_current").default(true).notNull(),
+  appointedBy: uuid("appointed_by").references(() => users.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 export type User = InferSelectModel<typeof users>;
 export type NewUser = InferInsertModel<typeof users>;
 export type Session = InferSelectModel<typeof sessions>;
@@ -766,3 +961,17 @@ export type PortalAnalyticsEvent = InferSelectModel<typeof portalAnalyticsEvents
 export type NewPortalAnalyticsEvent = InferInsertModel<typeof portalAnalyticsEvents>;
 export type NotificationDispatchLog = InferSelectModel<typeof notificationDispatchLog>;
 export type NewNotificationDispatchLog = InferInsertModel<typeof notificationDispatchLog>;
+export type ElectionCycle = InferSelectModel<typeof electionCycles>;
+export type NewElectionCycle = InferInsertModel<typeof electionCycles>;
+export type ElectionPosition = InferSelectModel<typeof electionPositions>;
+export type NewElectionPosition = InferInsertModel<typeof electionPositions>;
+export type Nomination = InferSelectModel<typeof nominations>;
+export type NewNomination = InferInsertModel<typeof nominations>;
+export type ElectionVote = InferSelectModel<typeof electionVotes>;
+export type NewElectionVote = InferInsertModel<typeof electionVotes>;
+export type GeneralPoll = InferSelectModel<typeof generalPolls>;
+export type NewGeneralPoll = InferInsertModel<typeof generalPolls>;
+export type PollVote = InferSelectModel<typeof pollVotes>;
+export type NewPollVote = InferInsertModel<typeof pollVotes>;
+export type GovernanceAppointment = InferSelectModel<typeof governanceAppointments>;
+export type NewGovernanceAppointment = InferInsertModel<typeof governanceAppointments>;

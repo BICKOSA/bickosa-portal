@@ -18,6 +18,11 @@ export const notificationTypes = [
   "mentorship_accepted",
   "new_campaign",
   "campaign_milestone",
+  "nomination_submitted",
+  "peer_nomination_received",
+  "voting_open",
+  "poll_open",
+  "results_published",
 ] as const;
 
 export type NotificationType = (typeof notificationTypes)[number];
@@ -32,6 +37,11 @@ export const notificationTitleTemplates: Record<NotificationType, string> = {
   mentorship_accepted: "[Mentor] accepted your request",
   new_campaign: "New fundraising campaign: [Title]",
   campaign_milestone: "[Campaign] reached 50% of its goal!",
+  nomination_submitted: "New nomination submitted",
+  peer_nomination_received: "You've been nominated for [Position]",
+  voting_open: "Voting is now open",
+  poll_open: "A new poll is open",
+  results_published: "Election results published",
 };
 
 export type CreateNotificationInput = {
