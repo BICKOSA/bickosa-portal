@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
 import { db } from "@/lib/db";
 import { mentorshipRequests } from "@/lib/db/schema";
+import { createNotification } from "@/lib/notifications/create-notification";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -75,6 +76,18 @@ export async function PATCH(request: Request, context: RouteContext) {
         respondedAt: now,
       })
       .where(eq(mentorshipRequests.id, id));
+
+    if (payload.status === "accepted") {
+      const mentorDisplayName = session.user.name?.trim() || "Your mentor";
+      await createNotification({
+        userId: existing.menteeId,
+        type: "mentorship_accepted",
+        title: `${mentorDisplayName} accepted your request`,
+        body: "Your mentorship request was accepted. Open your requests to view next steps.",
+        actionUrl: "/mentorship/my-requests",
+        idempotencyKey: `mentorship_accepted:${id}:${existing.menteeId}`,
+      });
+    }
 
     return NextResponse.json({
       status: payload.status,

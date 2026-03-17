@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth/auth";
 import { db } from "@/lib/db";
 import { alumniProfiles, eventRegistrations } from "@/lib/db/schema";
 import { getEventForRsvpValidation } from "@/lib/events";
+import { createNotification } from "@/lib/notifications/create-notification";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -130,6 +131,14 @@ export async function POST(_request: Request, context: RouteContext) {
     return NextResponse.json({ message: "This event is sold out." }, { status: 409 });
   }
 
+  const existingRegistration = await db.query.eventRegistrations.findFirst({
+    where: and(eq(eventRegistrations.eventId, eventId), eq(eventRegistrations.userId, session.user.id)),
+    columns: {
+      status: true,
+    },
+  });
+  const wasAlreadyAttending = existingRegistration?.status === "attending";
+
   await db
     .insert(eventRegistrations)
     .values({
@@ -145,14 +154,25 @@ export async function POST(_request: Request, context: RouteContext) {
       },
     });
 
-  try {
-    await scheduleReminderForRsvp({
-      eventId,
+  if (!wasAlreadyAttending) {
+    await createNotification({
       userId: session.user.id,
-      eventStartAt: event.startAt,
+      type: "rsvp_confirmed",
+      title: `RSVP confirmed for ${event.title}`,
+      body: `You are confirmed for ${event.title}. We look forward to seeing you there.`,
+      actionUrl: `/events/${event.slug}`,
+      idempotencyKey: `rsvp_confirmed:${eventId}:${session.user.id}`,
     });
-  } catch (error) {
-    console.error("Failed to schedule event reminder job", error);
+
+    try {
+      await scheduleReminderForRsvp({
+        eventId,
+        userId: session.user.id,
+        eventStartAt: event.startAt,
+      });
+    } catch (error) {
+      console.error("Failed to schedule event reminder job", error);
+    }
   }
 
   const updatedCount = await getAttendeeCount(eventId);

@@ -11,6 +11,10 @@ import {
 } from "@/lib/admin-campaigns";
 import { db } from "@/lib/db";
 import { campaigns } from "@/lib/db/schema";
+import {
+  createNotificationsForUsers,
+  listAllNotificationRecipientUserIds,
+} from "@/lib/notifications/create-notification";
 
 export async function GET(request: Request) {
   const authResult = await requireAdminApiSession();
@@ -68,7 +72,22 @@ export async function POST(request: Request) {
       })
       .returning({
         id: campaigns.id,
+        title: campaigns.title,
+        slug: campaigns.slug,
+        isPublished: campaigns.isPublished,
       });
+
+    if (created.isPublished) {
+      const recipients = await listAllNotificationRecipientUserIds();
+      await createNotificationsForUsers({
+        userIds: recipients,
+        type: "new_campaign",
+        title: `New fundraising campaign: ${created.title}`,
+        body: `${created.title} is now live. Explore the campaign and support the cause.`,
+        actionUrl: `/donate/${created.slug}`,
+        idempotencyKeyPrefix: `new_campaign:${created.id}`,
+      });
+    }
 
     return NextResponse.json({ id: created.id }, { status: 201 });
   } catch (error) {

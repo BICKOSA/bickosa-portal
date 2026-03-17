@@ -654,6 +654,27 @@ export const notifications = pgTable("notifications", {
     .notNull(),
 });
 
+export const notificationDispatchLog = pgTable(
+  "notification_dispatch_log",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    idempotencyKey: varchar("idempotency_key", { length: 255 }).notNull(),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
+    type: varchar("type", { length: 120 }).notNull(),
+    notificationId: uuid("notification_id").references(() => notifications.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => ({
+    idempotencyKeyUnique: uniqueIndex("notification_dispatch_log_idempotency_key_unique").on(
+      table.idempotencyKey,
+    ),
+  }),
+);
+
 export type User = InferSelectModel<typeof users>;
 export type NewUser = InferInsertModel<typeof users>;
 export type Session = InferSelectModel<typeof sessions>;
@@ -702,3 +723,5 @@ export type DocumentDownloadLog = InferSelectModel<typeof documentDownloadLogs>;
 export type NewDocumentDownloadLog = InferInsertModel<typeof documentDownloadLogs>;
 export type Notification = InferSelectModel<typeof notifications>;
 export type NewNotification = InferInsertModel<typeof notifications>;
+export type NotificationDispatchLog = InferSelectModel<typeof notificationDispatchLog>;
+export type NewNotificationDispatchLog = InferInsertModel<typeof notificationDispatchLog>;

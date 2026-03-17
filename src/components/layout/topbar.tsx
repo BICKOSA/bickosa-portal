@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, Plus, Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 
+import { NotificationPanel } from "@/components/layout/notification-panel";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
@@ -38,7 +39,6 @@ function getPageTitle(pathname: string): string {
 export function Topbar({ user }: { user: TopbarUser }) {
   const pathname = usePathname();
   const pageTitle = getPageTitle(pathname);
-  const hasUnreadNotifications = true;
 
   return (
     <header className="sticky top-0 z-20 flex h-[60px] items-center gap-4 border-b border-[var(--border)] bg-[var(--white)] px-4 sm:px-6 lg:px-8">
@@ -59,16 +59,7 @@ export function Topbar({ user }: { user: TopbarUser }) {
       </div>
 
       <div className="ml-auto flex items-center gap-2">
-        <button
-          type="button"
-          className="relative inline-flex size-9 items-center justify-center rounded-full border border-[var(--border)] text-[var(--text-2)] transition-colors hover:bg-[var(--navy-50)] hover:text-[var(--navy-700)]"
-          aria-label="Notifications"
-        >
-          <Bell className="size-4" />
-          {hasUnreadNotifications ? (
-            <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-[var(--gold-500)]" />
-          ) : null}
-        </button>
+        <NotificationPanel />
 
         <button
           type="button"

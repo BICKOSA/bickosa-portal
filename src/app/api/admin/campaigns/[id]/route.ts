@@ -11,6 +11,10 @@ import {
 } from "@/lib/admin-campaigns";
 import { db } from "@/lib/db";
 import { campaigns } from "@/lib/db/schema";
+import {
+  createNotificationsForUsers,
+  listAllNotificationRecipientUserIds,
+} from "@/lib/notifications/create-notification";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -45,6 +49,18 @@ export async function PATCH(request: Request, context: RouteContext) {
           updatedAt: new Date(),
         })
         .where(eq(campaigns.id, id));
+
+      if (payload.isPublished === true && !existing.isPublished) {
+        const recipients = await listAllNotificationRecipientUserIds();
+        await createNotificationsForUsers({
+          userIds: recipients,
+          type: "new_campaign",
+          title: `New fundraising campaign: ${existing.title}`,
+          body: `${existing.title} is now live. Explore the campaign and support the cause.`,
+          actionUrl: `/donate/${existing.slug}`,
+          idempotencyKeyPrefix: `new_campaign:${existing.id}`,
+        });
+      }
       return NextResponse.json({ id });
     }
 
@@ -87,6 +103,18 @@ export async function PATCH(request: Request, context: RouteContext) {
         updatedAt: new Date(),
       })
       .where(eq(campaigns.id, id));
+
+    if (input.isPublished && !existing.isPublished) {
+      const recipients = await listAllNotificationRecipientUserIds();
+      await createNotificationsForUsers({
+        userIds: recipients,
+        type: "new_campaign",
+        title: `New fundraising campaign: ${input.title}`,
+        body: `${input.title} is now live. Explore the campaign and support the cause.`,
+        actionUrl: `/donate/${input.slug}`,
+        idempotencyKeyPrefix: `new_campaign:${existing.id}`,
+      });
+    }
 
     return NextResponse.json({ id });
   } catch (error) {

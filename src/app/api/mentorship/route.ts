@@ -13,6 +13,7 @@ import {
   listMentors,
   normalizeMentorshipQuery,
 } from "@/lib/mentorship";
+import { createNotification } from "@/lib/notifications/create-notification";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 const MENTORSHIP_RATE_LIMIT = {
@@ -165,6 +166,15 @@ export async function POST(request: Request) {
     const requesterName = requesterProfile
       ? `${requesterProfile.firstName} ${requesterProfile.lastName}`.trim()
       : (session.user.name ?? "A BICKOSA member");
+
+    await createNotification({
+      userId: payload.mentorId,
+      type: "mentorship_request",
+      title: `${requesterName} wants you as a mentor`,
+      body: `${requesterName} sent you a mentorship request in ${payload.field}.`,
+      actionUrl: "/mentorship/my-requests",
+      idempotencyKey: `mentorship_request:${createdRequest.id}:${payload.mentorId}`,
+    });
 
     if (mentorUser?.email) {
       const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "https://portal.bickosa.org").replace(

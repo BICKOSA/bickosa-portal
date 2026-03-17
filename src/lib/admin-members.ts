@@ -9,6 +9,7 @@ import {
   verificationEvents,
 } from "@/lib/db/schema";
 import { sendVerificationApprovedEmail, sendVerificationRejectedEmail } from "@/lib/email/resend";
+import { createNotification } from "@/lib/notifications/create-notification";
 import { buildR2PublicUrl } from "@/lib/r2";
 
 const DEFAULT_PAGE = 1;
@@ -530,11 +531,25 @@ export async function verifyMemberProfileAction(input: VerifyMemberActionInput):
       firstName: profile.firstName,
       membershipTier: profile.membershipTier,
     });
+    await createNotification({
+      userId: profile.userId,
+      type: "verification_approved",
+      title: "Your membership has been verified!",
+      body: "Welcome aboard. You now have full access to verified member features.",
+      actionUrl: "/profile",
+    });
   } else if (input.action === "reject") {
     await sendVerificationRejectedEmail({
       to: profile.email,
       firstName: profile.firstName,
       reason: notes ?? "Your verification request needs additional review.",
+    });
+    await createNotification({
+      userId: profile.userId,
+      type: "verification_rejected",
+      title: "Membership verification update",
+      body: notes ?? "Your verification request needs additional review.",
+      actionUrl: "/profile",
     });
   }
 

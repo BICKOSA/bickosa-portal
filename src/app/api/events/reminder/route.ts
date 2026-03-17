@@ -6,6 +6,7 @@ import { eventRegistrations } from "@/lib/db/schema";
 import { buildGoogleCalendarUrl, getEventCalendarLocation } from "@/lib/events-calendar";
 import { getEventsByIdsForReminder, getUserBasicProfile } from "@/lib/events";
 import { sendEventReminderEmail } from "@/lib/email/resend";
+import { createNotification } from "@/lib/notifications/create-notification";
 
 type ReminderPayload = {
   eventId?: string;
@@ -90,6 +91,15 @@ export async function POST(request: Request) {
     eventDetailsUrl,
     googleCalendarUrl,
     appleCalendarUrl: eventDetailsUrl,
+  });
+
+  await createNotification({
+    userId,
+    type: "event_reminder",
+    title: `Reminder: ${event.title} is tomorrow`,
+    body: `Don't forget: ${event.title} starts at ${TIME_FORMATTER.format(event.startAt)}.`,
+    actionUrl: `/events/${event.slug}`,
+    idempotencyKey: `event_reminder:${eventId}:${userId}`,
   });
 
   return NextResponse.json({ ok: true });

@@ -4,6 +4,11 @@ import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { sendDonationReceiptEmail } from "@/lib/email/resend";
 import { db } from "@/lib/db";
 import { campaigns, consentLogs, donations, users } from "@/lib/db/schema";
+import {
+  createNotification,
+  createNotificationsForUsers,
+  listAllNotificationRecipientUserIds,
+} from "@/lib/notifications/create-notification";
 
 export type DonationReceiptData = {
   donationId: string;
@@ -79,6 +84,15 @@ export async function completeDonationAndSendReceipt(params: {
       return {
         status: "not_found" as const,
         receipt: null,
+        donationUserId: null as string | null,
+        campaignMilestone: null as
+          | {
+              shouldNotify: boolean;
+              id: string;
+              title: string;
+              slug: string;
+            }
+          | null,
       };
     }
 
@@ -87,16 +101,72 @@ export async function completeDonationAndSendReceipt(params: {
       return {
         status: "already_completed" as const,
         receipt,
+        donationUserId: donation.userId,
+        campaignMilestone: null as
+          | {
+              shouldNotify: boolean;
+              id: string;
+              title: string;
+              slug: string;
+            }
+          | null,
       };
     }
 
-    await tx
+    const campaign = await tx.query.campaigns.findFirst({
+      where: eq(campaigns.id, donation.campaignId),
+      columns: {
+        title: true,
+        slug: true,
+        goalAmount: true,
+        raisedAmount: true,
+        isPublished: true,
+      },
+    });
+
+    const previousProgressPercent =
+      campaign && campaign.goalAmount > BigInt(0)
+        ? Number((campaign.raisedAmount * BigInt(100)) / campaign.goalAmount)
+        : 0;
+    const nextRaisedAmount = (campaign?.raisedAmount ?? BigInt(0)) + donation.amount;
+    const nextProgressPercent =
+      campaign && campaign.goalAmount > BigInt(0)
+        ? Number((nextRaisedAmount * BigInt(100)) / campaign.goalAmount)
+        : 0;
+    const crossedHalfway =
+      Boolean(campaign?.isPublished) &&
+      previousProgressPercent < 50 &&
+      nextProgressPercent >= 50 &&
+      Boolean(campaign?.title) &&
+      Boolean(campaign?.slug);
+
+    const [updatedDonation] = await tx
       .update(donations)
       .set({
         paymentStatus: "completed",
         paymentRef: params.paymentRef ?? donation.paymentRef ?? `pay_${crypto.randomUUID()}`,
       })
-      .where(and(eq(donations.id, donation.id), eq(donations.paymentStatus, "pending")));
+      .where(and(eq(donations.id, donation.id), eq(donations.paymentStatus, "pending")))
+      .returning({
+        id: donations.id,
+      });
+
+    if (!updatedDonation) {
+      const receipt = await getDonationReceiptData(donation.id);
+      return {
+        status: "already_completed" as const,
+        receipt,
+        donationUserId: donation.userId,
+        campaignMilestone: null as
+          | {
+              shouldNotify: boolean;
+              id: string;
+              title: string;
+              slug: string;
+            }
+          | null,
+      };
+    }
 
     await tx
       .update(campaigns)
@@ -118,10 +188,24 @@ export async function completeDonationAndSendReceipt(params: {
     return {
       status: "completed" as const,
       receipt,
+      donationUserId: donation.userId,
+      campaignMilestone:
+        crossedHalfway && campaign
+          ? {
+              shouldNotify: true,
+            id: donation.campaignId,
+              title: campaign.title,
+              slug: campaign.slug,
+            }
+          : null,
     };
   });
 
   if (!completion.receipt) {
+    return completion;
+  }
+
+  if (completion.status !== "completed") {
     return completion;
   }
 
@@ -143,6 +227,29 @@ export async function completeDonationAndSendReceipt(params: {
       receiptRef: completion.receipt.referenceNumber,
     })
     .where(eq(donations.id, completion.receipt.donationId));
+
+  if (completion.donationUserId) {
+    await createNotification({
+      userId: completion.donationUserId,
+      type: "donation_received",
+      title: "Thank you for your donation",
+      body: `Your contribution of ${completion.receipt.amountLabel} to ${completion.receipt.campaignName} was received.`,
+      actionUrl: "/donate",
+      idempotencyKey: `donation_received:${completion.receipt.donationId}:${completion.donationUserId}`,
+    });
+  }
+
+  if (completion.campaignMilestone?.shouldNotify) {
+    const recipients = await listAllNotificationRecipientUserIds();
+    await createNotificationsForUsers({
+      userIds: recipients,
+      type: "campaign_milestone",
+      title: `${completion.campaignMilestone.title} reached 50% of its goal!`,
+      body: "Thanks to our alumni community, this campaign has reached a major milestone.",
+      actionUrl: `/donate/${completion.campaignMilestone.slug}`,
+      idempotencyKeyPrefix: `campaign_milestone_50:${completion.campaignMilestone.id}`,
+    });
+  }
 
   return completion;
 }
