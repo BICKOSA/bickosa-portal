@@ -1,5 +1,5 @@
 {
-  "buildCommand": "pnpm db:migrate && pnpm build",
+  "buildCommand": "if [ \"$VERCEL_ENV\" = \"production\" ]; then pnpm db:migrate; else echo \"Skipping DB migrations for $VERCEL_ENV deploy\"; fi && pnpm build",
   "crons": [
     {
       "path": "/api/cron/event-reminders",

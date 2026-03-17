@@ -1,11 +1,9 @@
 import { ImageResponse } from "next/og";
 
-export const size = {
+const imageSize = {
   width: 1200,
   height: 630,
 };
-
-export const contentType = "image/png";
 
 export async function GET() {
   return new ImageResponse(
@@ -39,6 +37,6 @@ export async function GET() {
         Bishop Cipriano Kihangire Old Students Association
       </div>
     </div>,
-    size,
+    imageSize,
   );
 }
