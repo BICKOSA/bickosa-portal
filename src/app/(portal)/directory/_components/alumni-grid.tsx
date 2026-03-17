@@ -1,5 +1,9 @@
 "use client";
 
+import { Users } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlumniCard } from "@/components/portal/alumni-card";
 import type { DirectoryAlumnus } from "@/lib/directory";
@@ -7,6 +11,7 @@ import type { DirectoryAlumnus } from "@/lib/directory";
 type AlumniGridProps = {
   alumni: DirectoryAlumnus[];
   isLoading: boolean;
+  onClearFilters?: () => void;
 };
 
 function AlumniCardSkeleton() {
@@ -29,11 +34,11 @@ function AlumniCardSkeleton() {
   );
 }
 
-export function AlumniGrid({ alumni, isLoading }: AlumniGridProps) {
+export function AlumniGrid({ alumni, isLoading, onClearFilters }: AlumniGridProps) {
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {Array.from({ length: 8 }).map((_, index) => (
+        {Array.from({ length: 12 }).map((_, index) => (
           <AlumniCardSkeleton key={index} />
         ))}
       </div>
@@ -42,14 +47,18 @@ export function AlumniGrid({ alumni, isLoading }: AlumniGridProps) {
 
   if (alumni.length === 0) {
     return (
-      <div className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--white)] px-6 py-12 text-center shadow-[var(--shadow-sm)]">
-        <h3 className="font-[var(--font-ui)] text-lg font-semibold text-[var(--navy-900)]">
-          No alumni found
-        </h3>
-        <p className="mt-2 text-sm text-[var(--text-3)]">
-          Try adjusting your filters or searching with a different keyword.
-        </p>
-      </div>
+      <EmptyState
+        icon={Users}
+        title="No alumni found"
+        body="Try adjusting your search or filters."
+        action={
+          onClearFilters ? (
+            <Button type="button" variant="outline" onClick={onClearFilters}>
+              Clear filters
+            </Button>
+          ) : null
+        }
+      />
     );
   }
 

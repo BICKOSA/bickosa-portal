@@ -1,9 +1,14 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { Calendar, Ticket } from "lucide-react";
 
 import { EventsGrid } from "@/app/(portal)/events/_components/events-grid";
+import EventsLoading from "@/app/(portal)/events/loading";
 import { PageHeader } from "@/components/layout/page-header";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { auth } from "@/lib/auth/auth";
 import { listEventsForViewer, normalizeEventsQuery } from "@/lib/events";
 
@@ -17,6 +22,55 @@ const TAB_LABELS = {
   past: "Past Events",
 } as const;
 
+async function EventsContent({
+  userId,
+  query,
+}: {
+  userId: string;
+  query: ReturnType<typeof normalizeEventsQuery>;
+}) {
+  const events = await listEventsForViewer({
+    userId,
+    query,
+  });
+
+  if (events.data.length === 0) {
+    if (query.tab === "upcoming") {
+      return (
+        <EmptyState
+          icon={Calendar}
+          title="No upcoming events"
+          body="Check back soon — the team is planning something great."
+        />
+      );
+    }
+
+    if (query.tab === "mine") {
+      return (
+        <EmptyState
+          icon={Ticket}
+          title="You haven't RSVP'd to any events yet"
+          action={
+            <Button asChild variant="navy">
+              <Link href="/events">Browse upcoming events</Link>
+            </Button>
+          }
+        />
+      );
+    }
+
+    return (
+      <EmptyState
+        icon={Calendar}
+        title="No past events yet"
+        body="Past events will appear here after our first activities."
+      />
+    );
+  }
+
+  return <EventsGrid events={events.data} />;
+}
+
 export default async function EventsPage({ searchParams }: EventsPageProps) {
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -28,11 +82,6 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
 
   const resolvedParams = searchParams ? await searchParams : {};
   const query = normalizeEventsQuery(resolvedParams);
-
-  const events = await listEventsForViewer({
-    userId: session.user.id,
-    query,
-  });
 
   return (
     <section className="space-y-4">
@@ -63,15 +112,9 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
         })}
       </div>
 
-      {events.data.length === 0 ? (
-        <div className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--white)] p-6 shadow-[var(--shadow-sm)]">
-          <p className="text-sm text-[var(--text-2)]">
-            No events found for this tab yet. Check back soon.
-          </p>
-        </div>
-      ) : (
-        <EventsGrid events={events.data} />
-      )}
+      <Suspense fallback={<EventsLoading />}>
+        <EventsContent userId={session.user.id} query={query} />
+      </Suspense>
     </section>
   );
 }

@@ -1,11 +1,15 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { Star } from "lucide-react";
 
+import MentorshipLoading from "@/app/(portal)/mentorship/loading";
 import { PageHeader } from "@/components/layout/page-header";
 import { MentorCard } from "@/components/portal/mentor-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { trackPortalEvent } from "@/lib/analytics/server";
 import { auth } from "@/lib/auth/auth";
 import { listMentors, normalizeMentorshipQuery, type MentorshipFieldFilter } from "@/lib/mentorship";
@@ -23,6 +27,60 @@ const mentorTabs: Array<{ label: string; field: MentorshipFieldFilter }> = [
   { label: "Engineering", field: "Engineering" },
 ];
 
+async function MentorshipContent({
+  userId,
+  query,
+}: {
+  userId: string;
+  query: ReturnType<typeof normalizeMentorshipQuery>;
+}) {
+  const mentors = await listMentors({
+    query,
+    viewerUserId: userId,
+  });
+
+  await trackPortalEvent({
+    event: "mentor_browse",
+    userId,
+    properties: {
+      filter_field: query.field,
+    },
+  });
+
+  if (mentors.length === 0) {
+    return (
+      <EmptyState
+        icon={Star}
+        title="No mentors found in this field"
+        body="Be the first! Sign up as a mentor."
+        action={
+          <Button asChild variant="navy">
+            <Link href="/mentorship/become-mentor">Become a Mentor</Link>
+          </Button>
+        }
+      />
+    );
+  }
+
+  return (
+    <div id="mentors" className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      {mentors.map((mentor) => (
+        <MentorCard
+          key={mentor.userId}
+          mentorId={mentor.userId}
+          fullName={mentor.fullName}
+          avatarUrl={mentor.avatarUrl}
+          jobTitle={mentor.jobTitle}
+          classYear={mentor.classYear}
+          focusAreas={mentor.focusAreas}
+          pendingRequestCount={mentor.pendingRequestCount}
+          hasPendingRequestFromViewer={mentor.hasPendingRequestFromViewer}
+        />
+      ))}
+    </div>
+  );
+}
+
 export default async function MentorshipPage({ searchParams }: MentorshipPageProps) {
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -34,19 +92,6 @@ export default async function MentorshipPage({ searchParams }: MentorshipPagePro
 
   const resolvedParams = searchParams ? await searchParams : {};
   const query = normalizeMentorshipQuery(resolvedParams);
-  const mentors = await listMentors({
-    query,
-    viewerUserId: session.user.id,
-  });
-
-  await trackPortalEvent({
-    event: "mentor_browse",
-    userId: session.user.id,
-    properties: {
-      filter_field: query.field,
-    },
-  });
-
   return (
     <section>
       <PageHeader
@@ -96,28 +141,9 @@ export default async function MentorshipPage({ searchParams }: MentorshipPagePro
         })}
       </div>
 
-      <div id="mentors" className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {mentors.map((mentor) => (
-          <MentorCard
-            key={mentor.userId}
-            mentorId={mentor.userId}
-            fullName={mentor.fullName}
-            avatarUrl={mentor.avatarUrl}
-            jobTitle={mentor.jobTitle}
-            classYear={mentor.classYear}
-            focusAreas={mentor.focusAreas}
-            pendingRequestCount={mentor.pendingRequestCount}
-            hasPendingRequestFromViewer={mentor.hasPendingRequestFromViewer}
-          />
-        ))}
-      </div>
-      {mentors.length === 0 ? (
-        <Card className="mt-4">
-          <CardContent className="py-6 text-sm text-(--text-2)">
-            No mentors matched your current filter.
-          </CardContent>
-        </Card>
-      ) : null}
+      <Suspense fallback={<MentorshipLoading />}>
+        <MentorshipContent userId={session.user.id} query={query} />
+      </Suspense>
     </section>
   );
 }

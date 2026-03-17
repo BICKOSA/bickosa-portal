@@ -24,6 +24,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/components/ui/toast";
 
 type NotificationItem = {
@@ -199,9 +200,11 @@ export function NotificationPanel() {
             ) : null}
 
             {!isLoading && items.length === 0 ? (
-              <div className="py-12 text-center text-sm text-[var(--text-2)]">
-                You&apos;re all caught up 🎉
-              </div>
+              <EmptyState
+                title="You're all caught up"
+                body="No new notifications."
+                className="border-dashed py-10 shadow-none"
+              />
             ) : null}
 
             {!isLoading ? (

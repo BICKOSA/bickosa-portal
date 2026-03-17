@@ -21,6 +21,7 @@ type DirectoryPageClientProps = {
   initialTotal: number;
   initialQuery: DirectoryQuery;
   chapterOptions: DirectoryChapterOption[];
+  showShell?: boolean;
 };
 
 export function DirectoryPageClient({
@@ -28,6 +29,7 @@ export function DirectoryPageClient({
   initialTotal,
   initialQuery,
   chapterOptions,
+  showShell = true,
 }: DirectoryPageClientProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -116,15 +118,22 @@ export function DirectoryPageClient({
     }
   }
 
+  function clearFilters() {
+    router.replace(pathname, { scroll: false });
+  }
+
   return (
     <section className="space-y-4">
-      <PageHeader
-        eyebrow="Community"
-        title="Alumni Directory"
-        description="Find fellow alumni by name, class year, location, chapter, and industry."
-      />
-
-      <DirectoryFilters chapterOptions={chapterOptions} />
+      {showShell ? (
+        <>
+          <PageHeader
+            eyebrow="Community"
+            title="Alumni Directory"
+            description="Find fellow alumni by name, class year, location, chapter, and industry."
+          />
+          <DirectoryFilters chapterOptions={chapterOptions} />
+        </>
+      ) : null}
 
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm text-[var(--text-3)]">{resultLabel}</p>
@@ -153,7 +162,7 @@ export function DirectoryPageClient({
         </div>
       </div>
 
-      <AlumniGrid alumni={alumni} isLoading={isLoading} />
+      <AlumniGrid alumni={alumni} isLoading={isLoading} onClearFilters={clearFilters} />
     </section>
   );
 }
