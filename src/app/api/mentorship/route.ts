@@ -6,7 +6,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
 import { trackPortalEvent } from "@/lib/analytics/server";
 import { db } from "@/lib/db";
-import { alumniProfiles, mentorshipRequests, users } from "@/lib/db/schema";
+import { alumniProfiles, mentorshipRequests, privacySettings, users } from "@/lib/db/schema";
 import { sendMentorshipRequestEmail } from "@/lib/email/resend";
 import {
   countPendingMenteeRequests,
@@ -175,14 +175,23 @@ export async function POST(request: Request) {
       ? `${requesterProfile.firstName} ${requesterProfile.lastName}`.trim()
       : (session.user.name ?? "A BICKOSA member");
 
-    await createNotification({
-      userId: payload.mentorId,
-      type: "mentorship_request",
-      title: `${requesterName} wants you as a mentor`,
-      body: `${requesterName} sent you a mentorship request in ${payload.field}.`,
-      actionUrl: "/mentorship/my-requests",
-      idempotencyKey: `mentorship_request:${createdRequest.id}:${payload.mentorId}`,
+    const mentorPrivacy = await db.query.privacySettings.findFirst({
+      where: eq(privacySettings.userId, payload.mentorId),
+      columns: {
+        receiveMentorshipNotifications: true,
+      },
     });
+
+    if (mentorPrivacy?.receiveMentorshipNotifications ?? true) {
+      await createNotification({
+        userId: payload.mentorId,
+        type: "mentorship_request",
+        title: `${requesterName} wants you as a mentor`,
+        body: `${requesterName} sent you a mentorship request in ${payload.field}.`,
+        actionUrl: "/mentorship/my-requests",
+        idempotencyKey: `mentorship_request:${createdRequest.id}:${payload.mentorId}`,
+      });
+    }
 
     await trackPortalEvent({
       event: "mentorship_request_sent",

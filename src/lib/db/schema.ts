@@ -122,6 +122,12 @@ export const documentCategoryEnum = pgEnum("document_category", [
 ]);
 
 export const userRoleEnum = pgEnum("user_role", ["member", "admin"]);
+export const deletionRequestStatusEnum = pgEnum("deletion_request_status", [
+  "pending",
+  "processing",
+  "completed",
+  "rejected",
+]);
 
 export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -317,9 +323,28 @@ export const privacySettings = pgTable("privacy_settings", {
   showOnDonorWall: boolean("show_on_donor_wall").default(true).notNull(),
   receiveEventReminders: boolean("receive_event_reminders").default(true).notNull(),
   receiveNewsletter: boolean("receive_newsletter").default(true).notNull(),
+  receiveMentorshipNotifications: boolean("receive_mentorship_notifications")
+    .default(true)
+    .notNull(),
+  receiveDonationCampaignUpdates: boolean("receive_donation_campaign_updates")
+    .default(true)
+    .notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
+});
+
+export const deletionRequests = pgTable("deletion_requests", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  requestedAt: timestamp("requested_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  status: deletionRequestStatusEnum("status").default("pending").notNull(),
+  processedAt: timestamp("processed_at", { withTimezone: true }),
+  notes: text("notes"),
 });
 
 export const events = pgTable("events", {
@@ -734,6 +759,8 @@ export type DocumentDownloadLog = InferSelectModel<typeof documentDownloadLogs>;
 export type NewDocumentDownloadLog = InferInsertModel<typeof documentDownloadLogs>;
 export type Notification = InferSelectModel<typeof notifications>;
 export type NewNotification = InferInsertModel<typeof notifications>;
+export type DeletionRequest = InferSelectModel<typeof deletionRequests>;
+export type NewDeletionRequest = InferInsertModel<typeof deletionRequests>;
 export type PortalAnalyticsEvent = InferSelectModel<typeof portalAnalyticsEvents>;
 export type NewPortalAnalyticsEvent = InferInsertModel<typeof portalAnalyticsEvents>;
 export type NotificationDispatchLog = InferSelectModel<typeof notificationDispatchLog>;

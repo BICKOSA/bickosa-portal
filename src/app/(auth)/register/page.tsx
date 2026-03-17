@@ -35,6 +35,7 @@ const registerSchema = z
     industry: z.string().min(1, "Select an industry."),
     locationCity: z.string().min(1, "City is required."),
     locationCountry: z.string().min(1, "Country is required."),
+    consentPolicyAgreement: z.boolean(),
     consentDataProcessing: z.boolean(),
     consentDirectory: z.boolean(),
     consentNewsletter: z.boolean(),
@@ -51,6 +52,10 @@ const registerSchema = z
   .refine((value) => value.consentDataProcessing, {
     path: ["consentDataProcessing"],
     message: "Data processing consent is required.",
+  })
+  .refine((value) => value.consentPolicyAgreement, {
+    path: ["consentPolicyAgreement"],
+    message: "You must agree to the Privacy Policy and Terms of Service.",
   });
 
 type RegisterValues = z.infer<typeof registerSchema>;
@@ -90,6 +95,7 @@ export default function RegisterPage() {
       industry: "",
       locationCity: "",
       locationCountry: "Uganda",
+      consentPolicyAgreement: false,
       consentDataProcessing: false,
       consentDirectory: true,
       consentNewsletter: true,
@@ -110,7 +116,13 @@ export default function RegisterPage() {
         "locationCity",
         "locationCountry",
       ],
-      ["consentDataProcessing", "consentDirectory", "consentNewsletter", "consentPhotography"],
+      [
+        "consentPolicyAgreement",
+        "consentDataProcessing",
+        "consentDirectory",
+        "consentNewsletter",
+        "consentPhotography",
+      ],
     ];
 
     const valid = await trigger(stepFields[step], { shouldFocus: true });
@@ -162,6 +174,7 @@ export default function RegisterPage() {
         locationCity: values.locationCity,
         locationCountry: values.locationCountry,
         consent: {
+          policyAgreement: values.consentPolicyAgreement,
           dataProcessing: values.consentDataProcessing,
           directory: values.consentDirectory,
           newsletter: values.consentNewsletter,
@@ -182,6 +195,7 @@ export default function RegisterPage() {
   };
 
   const consentDataProcessing = watch("consentDataProcessing");
+  const consentPolicyAgreement = watch("consentPolicyAgreement");
   const consentDirectory = watch("consentDirectory");
   const consentNewsletter = watch("consentNewsletter");
   const consentPhotography = watch("consentPhotography");
@@ -290,6 +304,33 @@ export default function RegisterPage() {
 
           {step === 3 ? (
             <div className="space-y-3">
+              <p className="text-xs text-[var(--text-3)]">
+                Please review our{" "}
+                <Link href="/privacy-policy" className="font-medium text-[var(--navy-700)] underline">
+                  Privacy Policy
+                </Link>{" "}
+                and{" "}
+                <Link href="/terms" className="font-medium text-[var(--navy-700)] underline">
+                  Terms of Service
+                </Link>{" "}
+                before submitting.
+              </p>
+
+              <label className="flex items-center gap-2 text-sm text-[var(--text-2)]">
+                <Checkbox
+                  checked={consentPolicyAgreement}
+                  onCheckedChange={(checked) =>
+                    setValue("consentPolicyAgreement", Boolean(checked), {
+                      shouldValidate: true,
+                    })
+                  }
+                />
+                I have read and agree to the Privacy Policy and Terms of Service.
+              </label>
+              {errors.consentPolicyAgreement?.message ? (
+                <p className="text-xs text-[var(--error)]">{errors.consentPolicyAgreement.message}</p>
+              ) : null}
+
               <label className="flex items-center gap-2 text-sm text-[var(--text-2)]">
                 <Checkbox
                   checked={consentDataProcessing}
@@ -318,7 +359,7 @@ export default function RegisterPage() {
                   checked={consentNewsletter}
                   onCheckedChange={(checked) => setValue("consentNewsletter", Boolean(checked))}
                 />
-                Send me newsletter updates.
+                I consent to receive the monthly newsletter.
               </label>
 
               <label className="flex items-center gap-2 text-sm text-[var(--text-2)]">

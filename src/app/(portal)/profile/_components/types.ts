@@ -31,9 +31,12 @@ export type PrivacySettingsViewData = {
   showInDirectory: boolean;
   showEmail: boolean;
   showPhone: boolean;
+  showEmployer: boolean;
   availableForMentorship: boolean;
   receiveEventReminders: boolean;
   receiveNewsletter: boolean;
+  receiveMentorshipNotifications: boolean;
+  receiveDonationCampaignUpdates: boolean;
   showOnDonorWall: boolean;
 };
 
@@ -42,4 +45,5 @@ export type ConsentLogViewData = {
   consentType: ConsentType;
   granted: boolean;
   createdAt: string;
+  ipAddress?: string | null;
 };

@@ -13,7 +13,7 @@ import { db } from "@/lib/db";
 import { campaigns } from "@/lib/db/schema";
 import {
   createNotificationsForUsers,
-  listAllNotificationRecipientUserIds,
+  listNotificationRecipientUserIdsByPreference,
 } from "@/lib/notifications/create-notification";
 
 type RouteContext = {
@@ -51,7 +51,9 @@ export async function PATCH(request: Request, context: RouteContext) {
         .where(eq(campaigns.id, id));
 
       if (payload.isPublished === true && !existing.isPublished) {
-        const recipients = await listAllNotificationRecipientUserIds();
+        const recipients = await listNotificationRecipientUserIdsByPreference({
+          preference: "receiveDonationCampaignUpdates",
+        });
         await createNotificationsForUsers({
           userIds: recipients,
           type: "new_campaign",
@@ -105,7 +107,9 @@ export async function PATCH(request: Request, context: RouteContext) {
       .where(eq(campaigns.id, id));
 
     if (input.isPublished && !existing.isPublished) {
-      const recipients = await listAllNotificationRecipientUserIds();
+      const recipients = await listNotificationRecipientUserIdsByPreference({
+        preference: "receiveDonationCampaignUpdates",
+      });
       await createNotificationsForUsers({
         userIds: recipients,
         type: "new_campaign",

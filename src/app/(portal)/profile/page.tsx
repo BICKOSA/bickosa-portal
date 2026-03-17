@@ -94,9 +94,12 @@ async function getProfilePageData(userId: string): Promise<{
         showInDirectory: true,
         showEmail: false,
         showPhone: false,
+        showEmployer: true,
         availableForMentorship: false,
         receiveEventReminders: true,
         receiveNewsletter: true,
+        receiveMentorshipNotifications: true,
+        receiveDonationCampaignUpdates: true,
         showOnDonorWall: true,
       },
       consent: [],
@@ -140,9 +143,12 @@ async function getProfilePageData(userId: string): Promise<{
       showInDirectory: privacyRow?.showInDirectory ?? true,
       showEmail: privacyRow?.showEmail ?? false,
       showPhone: privacyRow?.showPhone ?? false,
+      showEmployer: privacyRow?.showEmployer ?? true,
       availableForMentorship: privacyRow?.availableForMentorship ?? false,
       receiveEventReminders: privacyRow?.receiveEventReminders ?? true,
       receiveNewsletter: privacyRow?.receiveNewsletter ?? true,
+      receiveMentorshipNotifications: privacyRow?.receiveMentorshipNotifications ?? true,
+      receiveDonationCampaignUpdates: privacyRow?.receiveDonationCampaignUpdates ?? true,
       showOnDonorWall: privacyRow?.showOnDonorWall ?? true,
     },
     consent: consentRows.map((log) => ({
@@ -150,6 +156,7 @@ async function getProfilePageData(userId: string): Promise<{
       consentType: log.consentType,
       granted: log.granted,
       createdAt: log.createdAt.toISOString(),
+      ipAddress: log.ipAddress,
     })),
   };
 }

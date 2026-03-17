@@ -33,6 +33,10 @@ const settingLabels: Record<PrivacySettingKey, { label: string; description: str
     label: "Show Phone Number (to verified members only)",
     description: "Allow verified members to view your phone number.",
   },
+  showEmployer: {
+    label: "Show Current Employer",
+    description: "Display your current employer to verified members in your profile.",
+  },
   availableForMentorship: {
     label: "Available for Mentorship",
     description: "Show that you are available to mentor fellow alumni.",
@@ -45,6 +49,14 @@ const settingLabels: Record<PrivacySettingKey, { label: string; description: str
     label: "Receive Monthly Newsletter",
     description: "Receive curated monthly updates on community activity.",
   },
+  receiveMentorshipNotifications: {
+    label: "Receive Mentorship Notifications",
+    description: "Get updates for mentorship requests and accepted matches.",
+  },
+  receiveDonationCampaignUpdates: {
+    label: "Receive Donation Campaign Updates",
+    description: "Receive updates when new fundraising campaigns go live.",
+  },
   showOnDonorWall: {
     label: "Appear on Donor Wall after donations",
     description: "Display your name publicly when you support campaigns.",
@@ -55,9 +67,12 @@ const orderedKeys: PrivacySettingKey[] = [
   "showInDirectory",
   "showEmail",
   "showPhone",
+  "showEmployer",
   "availableForMentorship",
   "receiveEventReminders",
   "receiveNewsletter",
+  "receiveMentorshipNotifications",
+  "receiveDonationCampaignUpdates",
   "showOnDonorWall",
 ];
 

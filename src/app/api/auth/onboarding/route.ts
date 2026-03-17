@@ -34,6 +34,7 @@ const onboardingSchema = z
       .optional(),
     consent: z.object({
       dataProcessing: z.boolean(),
+      policyAgreement: z.boolean(),
       directory: z.boolean(),
       newsletter: z.boolean(),
       photography: z.boolean(),
@@ -46,6 +47,10 @@ const onboardingSchema = z
   .refine((value) => value.consent.dataProcessing, {
     message: "Data processing consent is required.",
     path: ["consent", "dataProcessing"],
+  })
+  .refine((value) => value.consent.policyAgreement, {
+    message: "Privacy Policy and Terms agreement is required.",
+    path: ["consent", "policyAgreement"],
   });
 
 export async function POST(request: Request) {
@@ -116,6 +121,8 @@ export async function POST(request: Request) {
           showOnDonorWall: true,
           receiveEventReminders: true,
           receiveNewsletter: payload.consent.newsletter,
+          receiveMentorshipNotifications: true,
+          receiveDonationCampaignUpdates: true,
           updatedAt: now,
         })
         .onConflictDoUpdate({

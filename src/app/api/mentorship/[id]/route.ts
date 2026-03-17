@@ -6,7 +6,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
 import { trackPortalEvent } from "@/lib/analytics/server";
 import { db } from "@/lib/db";
-import { mentorshipRequests } from "@/lib/db/schema";
+import { mentorshipRequests, privacySettings } from "@/lib/db/schema";
 import { createNotification } from "@/lib/notifications/create-notification";
 
 type RouteContext = {
@@ -80,14 +80,23 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     if (payload.status === "accepted") {
       const mentorDisplayName = session.user.name?.trim() || "Your mentor";
-      await createNotification({
-        userId: existing.menteeId,
-        type: "mentorship_accepted",
-        title: `${mentorDisplayName} accepted your request`,
-        body: "Your mentorship request was accepted. Open your requests to view next steps.",
-        actionUrl: "/mentorship/my-requests",
-        idempotencyKey: `mentorship_accepted:${id}:${existing.menteeId}`,
+      const menteePrivacy = await db.query.privacySettings.findFirst({
+        where: eq(privacySettings.userId, existing.menteeId),
+        columns: {
+          receiveMentorshipNotifications: true,
+        },
       });
+
+      if (menteePrivacy?.receiveMentorshipNotifications ?? true) {
+        await createNotification({
+          userId: existing.menteeId,
+          type: "mentorship_accepted",
+          title: `${mentorDisplayName} accepted your request`,
+          body: "Your mentorship request was accepted. Open your requests to view next steps.",
+          actionUrl: "/mentorship/my-requests",
+          idempotencyKey: `mentorship_accepted:${id}:${existing.menteeId}`,
+        });
+      }
 
       await trackPortalEvent({
         event: "mentorship_request_accepted",

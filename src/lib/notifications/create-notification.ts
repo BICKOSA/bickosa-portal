@@ -1,7 +1,12 @@
-import { eq } from "drizzle-orm";
+import { eq, isNull, or } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import { notificationDispatchLog, notifications, users } from "@/lib/db/schema";
+import {
+  notificationDispatchLog,
+  notifications,
+  privacySettings,
+  users,
+} from "@/lib/db/schema";
 
 export const notificationTypes = [
   "verification_approved",
@@ -175,5 +180,40 @@ export async function createNotificationsForUsers(
 
 export async function listAllNotificationRecipientUserIds(): Promise<string[]> {
   const rows = await db.select({ id: users.id }).from(users);
+  return rows.map((row) => row.id);
+}
+
+export async function listNotificationRecipientUserIdsByPreference(input: {
+  preference: "receiveMentorshipNotifications" | "receiveDonationCampaignUpdates";
+}): Promise<string[]> {
+  if (input.preference === "receiveMentorshipNotifications") {
+    const rows = await db
+      .select({
+        id: users.id,
+      })
+      .from(users)
+      .leftJoin(privacySettings, eq(privacySettings.userId, users.id))
+      .where(
+        or(
+          eq(privacySettings.receiveMentorshipNotifications, true),
+          isNull(privacySettings.id),
+        ),
+      );
+    return rows.map((row) => row.id);
+  }
+
+  const rows = await db
+    .select({
+      id: users.id,
+    })
+    .from(users)
+    .leftJoin(privacySettings, eq(privacySettings.userId, users.id))
+    .where(
+      or(
+        eq(privacySettings.receiveDonationCampaignUpdates, true),
+        isNull(privacySettings.id),
+      ),
+    );
+
   return rows.map((row) => row.id);
 }

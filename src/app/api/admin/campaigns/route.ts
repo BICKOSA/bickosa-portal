@@ -13,7 +13,7 @@ import { db } from "@/lib/db";
 import { campaigns } from "@/lib/db/schema";
 import {
   createNotificationsForUsers,
-  listAllNotificationRecipientUserIds,
+  listNotificationRecipientUserIdsByPreference,
 } from "@/lib/notifications/create-notification";
 
 export async function GET(request: Request) {
@@ -78,7 +78,9 @@ export async function POST(request: Request) {
       });
 
     if (created.isPublished) {
-      const recipients = await listAllNotificationRecipientUserIds();
+      const recipients = await listNotificationRecipientUserIdsByPreference({
+        preference: "receiveDonationCampaignUpdates",
+      });
       await createNotificationsForUsers({
         userIds: recipients,
         type: "new_campaign",
