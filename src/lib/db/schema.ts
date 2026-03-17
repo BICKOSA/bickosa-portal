@@ -323,6 +323,10 @@ export const alumniProfiles = pgTable("alumni_profiles", {
   linkedinUrl: text("linkedin_url"),
   websiteUrl: text("website_url"),
   avatarKey: text("avatar_key"),
+  notableTeachers: text("notable_teachers"),
+  howTheyHeard: varchar("how_they_heard", { length: 255 }),
+  stream: varchar("stream", { length: 120 }),
+  house: varchar("house", { length: 120 }),
   verificationStatus: verificationStatusEnum("verification_status")
     .default("pending")
     .notNull(),

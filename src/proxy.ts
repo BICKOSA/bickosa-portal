@@ -43,6 +43,12 @@ type RateLimitEntry = {
 
 const RATE_LIMIT_RULES: RateLimitRule[] = [
   {
+    prefix: "/api/public/join-with-account",
+    limit: 10,
+    windowMs: 60_000,
+    keyType: "ip",
+  },
+  {
     prefix: "/api/public/join",
     limit: 15,
     windowMs: 60_000,
@@ -202,7 +208,9 @@ export async function proxy(request: NextRequest) {
   if (shouldRewriteToPortal(pathname)) {
     const rewriteUrl = request.nextUrl.clone();
     rewriteUrl.pathname = `/portal${pathname}`;
-    return NextResponse.rewrite(rewriteUrl);
+    const response = NextResponse.rewrite(rewriteUrl);
+    response.headers.set("x-pathname", pathname);
+    return response;
   }
 
   return NextResponse.next();
@@ -226,6 +234,7 @@ export const config = {
     "/governance/:path*",
     "/api/donations/:path*",
     "/api/public/join/:path*",
+    "/api/public/join-with-account/:path*",
     "/api/directory/:path*",
     "/api/upload/:path*",
   ],
