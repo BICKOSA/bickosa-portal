@@ -16,6 +16,7 @@ type SessionUser = {
   email?: string | null;
   image?: string | null;
   emailVerified?: boolean;
+  role?: string;
 };
 
 export default async function PortalLayout({ children }: PortalLayoutProps) {
@@ -36,6 +37,7 @@ export default async function PortalLayout({ children }: PortalLayoutProps) {
       typeof session.user.emailVerified === "boolean"
         ? session.user.emailVerified
         : undefined,
+    role: typeof (session.user as { role?: unknown }).role === "string" ? (session.user as { role: string }).role : undefined,
   };
 
   return (

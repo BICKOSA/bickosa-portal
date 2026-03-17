@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  ShieldCheck,
   BriefcaseBusiness,
   CalendarCheck2,
   FileText,
@@ -26,6 +27,7 @@ type SidebarUser = {
   email?: string | null;
   image?: string | null;
   emailVerified?: boolean;
+  role?: string;
 };
 
 type NavItem = {
@@ -35,7 +37,7 @@ type NavItem = {
   badge?: string;
 };
 
-const navGroups: Array<{ label: string; items: NavItem[] }> = [
+const baseNavGroups: Array<{ label: string; items: NavItem[] }> = [
   {
     label: "Overview",
     items: [{ label: "Dashboard", href: "/dashboard", icon: LayoutGrid }],
@@ -72,12 +74,33 @@ const navGroups: Array<{ label: string; items: NavItem[] }> = [
   },
 ];
 
+const adminNavGroup: { label: string; items: NavItem[] } = {
+  label: "Admin",
+  items: [
+    { label: "Admin Dashboard", href: "/admin", icon: ShieldCheck },
+    { label: "Member Verification", href: "/admin/members", icon: Users },
+    { label: "Careers Queue", href: "/admin/careers", icon: BriefcaseBusiness },
+    { label: "Donations", href: "/admin/donations", icon: HeartHandshake },
+    { label: "Events", href: "/admin/events", icon: CalendarCheck2 },
+    { label: "Campaigns", href: "/admin/campaigns", icon: FileText },
+  ],
+};
+
 const mobileNavItems: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutGrid },
   { label: "Directory", href: "/directory", icon: Users },
   { label: "Careers", href: "/careers", icon: BriefcaseBusiness },
   { label: "Events", href: "/events", icon: CalendarCheck2 },
   { label: "Donate", href: "/donate", icon: HeartHandshake },
+  { label: "Profile", href: "/profile", icon: UserCircle2 },
+];
+
+const mobileAdminNavItems: NavItem[] = [
+  { label: "Admin", href: "/admin", icon: ShieldCheck },
+  { label: "Members", href: "/admin/members", icon: Users },
+  { label: "Careers", href: "/admin/careers", icon: BriefcaseBusiness },
+  { label: "Events", href: "/admin/events", icon: CalendarCheck2 },
+  { label: "Donate", href: "/admin/donations", icon: HeartHandshake },
   { label: "Profile", href: "/profile", icon: UserCircle2 },
 ];
 
@@ -88,6 +111,8 @@ function isActivePath(pathname: string, href: string): boolean {
 export function Sidebar({ user }: { user: SidebarUser }) {
   const pathname = usePathname();
   const memberName = user.name?.trim() || "BICKOSA Member";
+  const isAdmin = user.role === "admin";
+  const navGroups = isAdmin ? [...baseNavGroups, adminNavGroup] : baseNavGroups;
 
   return (
     <>
@@ -128,6 +153,11 @@ export function Sidebar({ user }: { user: SidebarUser }) {
             <Badge variant="gold" size="sm" className="mt-3 h-5 px-2 text-[10px] uppercase tracking-wide">
               Verified
             </Badge>
+            {isAdmin ? (
+              <Badge variant="outline" size="sm" className="mt-2 h-5 px-2 text-[10px] uppercase tracking-wide">
+                ADMIN
+              </Badge>
+            ) : null}
           </div>
         </div>
 
@@ -176,7 +206,7 @@ export function Sidebar({ user }: { user: SidebarUser }) {
       </aside>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 grid h-16 grid-cols-6 border-t border-[color:rgba(255,255,255,0.12)] bg-[color:rgba(13,27,62,0.98)] px-1 lg:hidden">
-        {mobileNavItems.map((item) => {
+        {(isAdmin ? mobileAdminNavItems : mobileNavItems).map((item) => {
           const active = isActivePath(pathname, item.href);
           const Icon = item.icon;
           return (
