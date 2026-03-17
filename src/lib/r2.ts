@@ -1,4 +1,5 @@
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const r2AccountId = process.env.R2_ACCOUNT_ID;
 const r2AccessKeyId = process.env.R2_ACCESS_KEY_ID;
@@ -36,6 +37,28 @@ function getR2Client(): S3Client {
       secretAccessKey: env.secretAccessKey,
     },
   });
+}
+
+export async function getR2SignedDownloadUrl(params: {
+  key: string;
+  expiresInSeconds?: number;
+  downloadFilename?: string;
+}): Promise<string> {
+  const client = getR2Client();
+  const bucket = getR2BucketName();
+  const expiresInSeconds = params.expiresInSeconds ?? 60;
+
+  return getSignedUrl(
+    client,
+    new GetObjectCommand({
+      Bucket: bucket,
+      Key: params.key,
+      ResponseContentDisposition: params.downloadFilename
+        ? `attachment; filename="${params.downloadFilename}"`
+        : undefined,
+    }),
+    { expiresIn: expiresInSeconds },
+  );
 }
 
 export function getR2BucketName(): string {

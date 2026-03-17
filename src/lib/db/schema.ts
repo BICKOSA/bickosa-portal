@@ -624,6 +624,21 @@ export const documents = pgTable("documents", {
     .notNull(),
 });
 
+export const documentDownloadLogs = pgTable("document_download_logs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  documentId: uuid("document_id")
+    .notNull()
+    .references(() => documents.id, { onDelete: "cascade" }),
+  downloadedByUserId: uuid("downloaded_by_user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  downloadedAt: timestamp("downloaded_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  ipAddress: varchar("ip_address", { length: 64 }),
+  userAgent: text("user_agent"),
+});
+
 export const notifications = pgTable("notifications", {
   id: uuid("id").defaultRandom().primaryKey(),
   userId: uuid("user_id")
@@ -683,5 +698,7 @@ export type JobPosting = InferSelectModel<typeof jobPostings>;
 export type NewJobPosting = InferInsertModel<typeof jobPostings>;
 export type Document = InferSelectModel<typeof documents>;
 export type NewDocument = InferInsertModel<typeof documents>;
+export type DocumentDownloadLog = InferSelectModel<typeof documentDownloadLogs>;
+export type NewDocumentDownloadLog = InferInsertModel<typeof documentDownloadLogs>;
 export type Notification = InferSelectModel<typeof notifications>;
 export type NewNotification = InferInsertModel<typeof notifications>;
