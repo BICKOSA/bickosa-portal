@@ -332,6 +332,9 @@ export const consentLogs = pgTable("consent_logs", {
     .references(() => users.id, { onDelete: "cascade" }),
   consentType: consentTypeEnum("consent_type").notNull(),
   granted: boolean("granted").notNull(),
+  action: varchar("action", { length: 64 }),
+  resourceType: varchar("resource_type", { length: 64 }),
+  resourceId: uuid("resource_id"),
   ipAddress: varchar("ip_address", { length: 64 }),
   userAgent: text("user_agent"),
   createdAt: timestamp("created_at", { withTimezone: true })

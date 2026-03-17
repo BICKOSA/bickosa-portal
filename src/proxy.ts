@@ -26,7 +26,7 @@ const PROTECTED_REWRITE_PREFIXES = [
   "/governance",
 ];
 
-const PROTECTED_DIRECT_PREFIXES = ["/events"];
+const PROTECTED_DIRECT_PREFIXES = ["/events", "/voting"];
 
 type RateLimitRule = {
   prefix: string;
@@ -220,6 +220,7 @@ export const config = {
     "/admin/:path*",
     "/mentorship/:path*",
     "/events/:path*",
+    "/voting/:path*",
     "/sports/:path*",
     "/careers/:path*",
     "/donate/:path*",

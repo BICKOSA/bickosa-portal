@@ -36,6 +36,10 @@ export default async function PollPage({ params }: PageProps) {
 
   return (
     <section className="space-y-5">
+      <p className="rounded-[var(--r-md)] border border-[var(--border)] bg-[var(--white)] px-4 py-3 text-sm text-[var(--text-2)]">
+        Your participation is recorded for quorum and audit purposes in accordance with Uganda's Data
+        Protection and Privacy Act, 2019. Your specific ballot choice is kept confidential.
+      </p>
       <Card>
         <CardHeader className="space-y-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -48,7 +52,11 @@ export default async function PollPage({ params }: PageProps) {
           </p>
           {data.poll.isAnonymous ? (
             <p className="text-sm text-[var(--text-3)]">Your vote will not be attributed to you.</p>
-          ) : null}
+          ) : (
+            <p className="text-sm text-[var(--text-3)]">
+              This is a non-anonymous poll. Your choice may be attributable for accountability.
+            </p>
+          )}
         </CardHeader>
         <CardContent>
           <PollVoteClient

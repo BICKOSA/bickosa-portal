@@ -87,6 +87,8 @@ const adminNavGroup: { label: string; items: NavItem[] } = {
     { label: "Donations", href: "/admin/donations", icon: HeartHandshake },
     { label: "Events", href: "/admin/events", icon: CalendarCheck2 },
     { label: "Campaigns", href: "/admin/campaigns", icon: FileText },
+    { label: "Elections", href: "/admin/elections", icon: Vote },
+    { label: "Polls", href: "/admin/polls", icon: Vote },
   ],
 };
 
@@ -106,6 +108,7 @@ const mobileAdminNavItems: NavItem[] = [
   { label: "Members", href: "/admin/members", icon: Users },
   { label: "Careers", href: "/admin/careers", icon: BriefcaseBusiness },
   { label: "Events", href: "/admin/events", icon: CalendarCheck2 },
+  { label: "Elections", href: "/admin/elections", icon: Vote },
   { label: "Donate", href: "/admin/donations", icon: HeartHandshake },
   { label: "Profile", href: "/profile", icon: UserCircle2 },
 ];

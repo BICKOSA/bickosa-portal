@@ -33,6 +33,10 @@ export default async function VotingHubPage() {
         title="Voting Hub"
         description="Track open elections and active polls, then complete your nominations and votes."
       />
+      <p className="rounded-[var(--r-md)] border border-[var(--border)] bg-[var(--white)] px-4 py-3 text-sm text-[var(--text-2)]">
+        Your participation is recorded for quorum and audit purposes in accordance with Uganda's Data
+        Protection and Privacy Act, 2019. Your specific ballot choice is kept confidential.
+      </p>
 
       <div className="grid gap-5 xl:grid-cols-2">
         <Card>

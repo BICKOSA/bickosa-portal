@@ -9,6 +9,7 @@ import { auth } from "@/lib/auth/auth";
 import { db } from "@/lib/db";
 import {
   alumniProfiles,
+  consentLogs,
   electionCycles,
   electionPositions,
   electionVotes,
@@ -445,6 +446,16 @@ export async function submitElectionVotes(
           castAt: now,
         })),
       );
+
+      await tx.insert(consentLogs).values({
+        userId: session.user.id,
+        consentType: "data_processing",
+        granted: true,
+        action: "cast_vote",
+        resourceType: "election_cycle",
+        resourceId: parsed.data.cycleId,
+        createdAt: now,
+      });
     });
   } catch (error) {
     if (error instanceof Error && /already voted|unique|duplicate/i.test(error.message)) {
@@ -504,6 +515,15 @@ export async function submitPollVote(
       voterId: session.user.id,
       choice: parsed.data.choice,
       castAt: now,
+    });
+    await db.insert(consentLogs).values({
+      userId: session.user.id,
+      consentType: "data_processing",
+      granted: true,
+      action: "cast_vote",
+      resourceType: "general_poll",
+      resourceId: poll.id,
+      createdAt: now,
     });
   } catch (error) {
     if (error instanceof Error && /unique|duplicate/i.test(error.message)) {
