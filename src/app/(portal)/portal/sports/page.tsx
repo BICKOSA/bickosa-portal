@@ -24,7 +24,7 @@ async function SportsContent({ userId }: { userId: string }) {
   if (!data) {
     return (
       <EmptyState
-        icon={Trophy}
+        icon={<Trophy className="size-6" />}
         title="No season has been configured yet"
         body="League standings and fixtures will appear once the new season is published."
       />

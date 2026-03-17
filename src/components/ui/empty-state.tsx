@@ -1,19 +1,18 @@
 "use client";
 
 import type { ReactNode } from "react";
-import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 type EmptyStateProps = {
-  icon?: LucideIcon;
+  icon?: ReactNode;
   title: string;
   body?: string;
   action?: ReactNode;
   className?: string;
 };
 
-export function EmptyState({ icon: Icon, title, body, action, className }: EmptyStateProps) {
+export function EmptyState({ icon, title, body, action, className }: EmptyStateProps) {
   return (
     <div
       className={cn(
@@ -21,9 +20,9 @@ export function EmptyState({ icon: Icon, title, body, action, className }: Empty
         className,
       )}
     >
-      {Icon ? (
+      {icon ? (
         <span className="mx-auto inline-flex size-12 items-center justify-center rounded-full bg-[var(--navy-50)] text-[var(--navy-700)]">
-          <Icon className="size-6" />
+          {icon}
         </span>
       ) : null}
       <h3 className="mt-4 font-[var(--font-ui)] text-lg font-semibold text-[var(--navy-900)]">{title}</h3>

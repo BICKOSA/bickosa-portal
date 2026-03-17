@@ -38,7 +38,7 @@ async function EventsContent({
     if (query.tab === "upcoming") {
       return (
         <EmptyState
-          icon={Calendar}
+          icon={<Calendar className="size-6" />}
           title="No upcoming events"
           body="Check back soon — the team is planning something great."
         />
@@ -48,7 +48,7 @@ async function EventsContent({
     if (query.tab === "mine") {
       return (
         <EmptyState
-          icon={Ticket}
+          icon={<Ticket className="size-6" />}
           title="You haven't RSVP'd to any events yet"
           action={
             <Button asChild variant="navy">
@@ -61,7 +61,7 @@ async function EventsContent({
 
     return (
       <EmptyState
-        icon={Calendar}
+        icon={<Calendar className="size-6" />}
         title="No past events yet"
         body="Past events will appear here after our first activities."
       />

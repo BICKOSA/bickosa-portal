@@ -57,6 +57,48 @@
       "when": 1773720600000,
       "tag": "0007_vote_audit_consent_log_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1773724200000,
+      "tag": "0008_dppa_privacy_controls",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1773727800000,
+      "tag": "0009_event_registration_reminder_timestamp",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1773731400000,
+      "tag": "0010_ad_hoc_committees",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1773735000000,
+      "tag": "0011_constitution_module",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1773738600000,
+      "tag": "0012_alumni_registration_cohorts_outreach",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1773742200000,
+      "tag": "0013_unified_registration_flow",
+      "breakpoints": true
     }
   ]
 }

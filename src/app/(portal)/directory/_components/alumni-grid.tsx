@@ -48,7 +48,7 @@ export function AlumniGrid({ alumni, isLoading, onClearFilters }: AlumniGridProp
   if (alumni.length === 0) {
     return (
       <EmptyState
-        icon={Users}
+        icon={<Users className="size-6" />}
         title="No alumni found"
         body="Try adjusting your search or filters."
         action={

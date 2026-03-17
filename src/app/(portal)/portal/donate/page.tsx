@@ -106,7 +106,7 @@ async function DonateContent({
         </h2>
         {campaigns.length === 0 ? (
           <EmptyState
-            icon={HandHeart}
+            icon={<HandHeart className="size-6" />}
             title="No active campaigns"
             body="New giving opportunities will appear here once campaigns are published."
           />

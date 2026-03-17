@@ -50,7 +50,7 @@ async function MentorshipContent({
   if (mentors.length === 0) {
     return (
       <EmptyState
-        icon={Star}
+        icon={<Star className="size-6" />}
         title="No mentors found in this field"
         body="Be the first! Sign up as a mentor."
         action={
