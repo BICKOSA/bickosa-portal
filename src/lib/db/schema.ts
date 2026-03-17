@@ -173,6 +173,19 @@ export const committeeNominationStatusEnum = pgEnum("committee_nomination_status
   "declined",
   "appointed",
 ]);
+export const amendmentProposalStatusEnum = pgEnum("amendment_proposal_status", [
+  "draft",
+  "open_for_comment",
+  "under_review",
+  "petition_raised",
+  "approved",
+  "deferred",
+]);
+export const agmPetitionOutcomeEnum = pgEnum("agm_petition_outcome", [
+  "approved",
+  "deferred",
+  "withdrawn",
+]);
 
 export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -1004,6 +1017,85 @@ export const committeeMembers = pgTable(
   }),
 );
 
+export const constitutionVersions = pgTable(
+  "constitution_versions",
+  {
+    id: uuid("id").default(sql`uuid_generate_v4()`).primaryKey(),
+    versionTag: text("version_tag").notNull(),
+    effectiveDate: date("effective_date").notNull(),
+    documentUrl: text("document_url"),
+    isCurrent: boolean("is_current").default(false).notNull(),
+    notes: text("notes"),
+    publishedBy: uuid("published_by").references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    effectiveDateIdx: index("constitution_versions_effective_date_idx").on(table.effectiveDate),
+  }),
+);
+
+export const amendmentProposals = pgTable(
+  "amendment_proposals",
+  {
+    id: uuid("id").default(sql`uuid_generate_v4()`).primaryKey(),
+    constitutionVersionId: uuid("constitution_version_id").references(() => constitutionVersions.id, {
+      onDelete: "set null",
+    }),
+    proposedBy: uuid("proposed_by").references(() => users.id, { onDelete: "set null" }),
+    clauseReference: text("clause_reference"),
+    currentText: text("current_text"),
+    proposedText: text("proposed_text"),
+    rationale: text("rationale").notNull(),
+    status: amendmentProposalStatusEnum("status").default("draft").notNull(),
+    commentClosesAt: timestamp("comment_closes_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    statusIdx: index("amendment_proposals_status_idx").on(table.status),
+    versionIdx: index("amendment_proposals_version_idx").on(table.constitutionVersionId),
+  }),
+);
+
+export const amendmentComments = pgTable(
+  "amendment_comments",
+  {
+    id: uuid("id").default(sql`uuid_generate_v4()`).primaryKey(),
+    amendmentProposalId: uuid("amendment_proposal_id")
+      .notNull()
+      .references(() => amendmentProposals.id, { onDelete: "cascade" }),
+    authorId: uuid("author_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    comment: text("comment").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    proposalIdx: index("amendment_comments_proposal_idx").on(table.amendmentProposalId),
+    authorIdx: index("amendment_comments_author_idx").on(table.authorId),
+  }),
+);
+
+export const agmPetitions = pgTable(
+  "agm_petitions",
+  {
+    id: uuid("id").default(sql`uuid_generate_v4()`).primaryKey(),
+    agmEventId: uuid("agm_event_id").references(() => events.id, { onDelete: "set null" }),
+    amendmentProposalId: uuid("amendment_proposal_id").references(() => amendmentProposals.id, {
+      onDelete: "set null",
+    }),
+    outcome: agmPetitionOutcomeEnum("outcome"),
+    outcomeNotes: text("outcome_notes"),
+    votedAt: timestamp("voted_at", { withTimezone: true }),
+    recordedBy: uuid("recorded_by").references(() => users.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    amendmentIdx: index("agm_petitions_amendment_idx").on(table.amendmentProposalId),
+    agmEventIdx: index("agm_petitions_agm_event_idx").on(table.agmEventId),
+  }),
+);
+
 export type User = InferSelectModel<typeof users>;
 export type NewUser = InferInsertModel<typeof users>;
 export type Session = InferSelectModel<typeof sessions>;
@@ -1078,3 +1170,11 @@ export type CommitteeNomination = InferSelectModel<typeof committeeNominations>;
 export type NewCommitteeNomination = InferInsertModel<typeof committeeNominations>;
 export type CommitteeMember = InferSelectModel<typeof committeeMembers>;
 export type NewCommitteeMember = InferInsertModel<typeof committeeMembers>;
+export type ConstitutionVersion = InferSelectModel<typeof constitutionVersions>;
+export type NewConstitutionVersion = InferInsertModel<typeof constitutionVersions>;
+export type AmendmentProposal = InferSelectModel<typeof amendmentProposals>;
+export type NewAmendmentProposal = InferInsertModel<typeof amendmentProposals>;
+export type AmendmentComment = InferSelectModel<typeof amendmentComments>;
+export type NewAmendmentComment = InferInsertModel<typeof amendmentComments>;
+export type AgmPetition = InferSelectModel<typeof agmPetitions>;
+export type NewAgmPetition = InferInsertModel<typeof agmPetitions>;

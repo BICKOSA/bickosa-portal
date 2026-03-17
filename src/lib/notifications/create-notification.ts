@@ -27,6 +27,9 @@ export const notificationTypes = [
   "committee_nomination_accepted",
   "committee_nomination_declined",
   "committee_appointed",
+  "constitution_amendment_open_for_comment",
+  "constitution_comment_deadline_reminder",
+  "constitution_outcome_recorded",
 ] as const;
 
 export type NotificationType = (typeof notificationTypes)[number];
@@ -50,6 +53,9 @@ export const notificationTitleTemplates: Record<NotificationType, string> = {
   committee_nomination_accepted: "Committee nomination accepted",
   committee_nomination_declined: "Committee nomination declined",
   committee_appointed: "You were appointed to a committee",
+  constitution_amendment_open_for_comment: "Constitution amendment open for comment",
+  constitution_comment_deadline_reminder: "Comment deadline approaching",
+  constitution_outcome_recorded: "Constitution amendment outcome recorded",
 };
 
 export type CreateNotificationInput = {

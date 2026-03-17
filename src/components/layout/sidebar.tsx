@@ -74,7 +74,10 @@ const baseNavGroups: Array<{ label: string; items: NavItem[] }> = [
   },
   {
     label: "About",
-    items: [{ label: "Governance & Docs", href: "/governance", icon: FileText }],
+    items: [
+      { label: "Governance & Docs", href: "/governance", icon: FileText },
+      { label: "Constitution", href: "/constitution", icon: FileText },
+    ],
   },
 ];
 
@@ -91,6 +94,7 @@ const adminNavGroup: { label: string; items: NavItem[] } = {
     { label: "Elections", href: "/admin/elections", icon: Vote },
     { label: "Polls", href: "/admin/polls", icon: Vote },
     { label: "Committees", href: "/admin/committees", icon: Users },
+    { label: "Constitution", href: "/admin/constitution", icon: FileText },
   ],
 };
 
@@ -112,6 +116,7 @@ const mobileAdminNavItems: NavItem[] = [
   { label: "Events", href: "/admin/events", icon: CalendarCheck2 },
   { label: "Elections", href: "/admin/elections", icon: Vote },
   { label: "Committees", href: "/admin/committees", icon: Users },
+  { label: "Constitution", href: "/admin/constitution", icon: FileText },
   { label: "Donate", href: "/admin/donations", icon: HeartHandshake },
   { label: "Profile", href: "/profile", icon: UserCircle2 },
 ];
