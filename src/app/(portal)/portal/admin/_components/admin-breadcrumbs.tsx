@@ -19,6 +19,10 @@ const segmentLabelMap: Record<string, string> = {
   donations: "Donations",
   events: "Events",
   campaigns: "Campaigns",
+  registrations: "Registrations",
+  "school-records": "School Records",
+  outreach: "Outreach",
+  cohorts: "Cohorts",
   governance: "Governance",
   documents: "Documents",
   dashboard: "Dashboard",
@@ -26,7 +30,10 @@ const segmentLabelMap: Record<string, string> = {
 };
 
 function toLabel(segment: string): string {
-  return segmentLabelMap[segment] ?? segment.charAt(0).toUpperCase() + segment.slice(1);
+  return (
+    segmentLabelMap[segment] ??
+    segment.charAt(0).toUpperCase() + segment.slice(1)
+  );
 }
 
 export function AdminBreadcrumbs() {
@@ -55,7 +62,9 @@ export function AdminBreadcrumbs() {
             {item.isLast ? (
               <BreadcrumbPage>{item.label}</BreadcrumbPage>
             ) : (
-              <BreadcrumbLink render={<Link href={item.href} />}>{item.label}</BreadcrumbLink>
+              <BreadcrumbLink render={<Link href={item.href} />}>
+                {item.label}
+              </BreadcrumbLink>
             )}
             {index < items.length - 1 ? <BreadcrumbSeparator /> : null}
           </BreadcrumbItem>

@@ -48,6 +48,7 @@ const baseNavGroups: Array<{ label: string; items: NavItem[] }> = [
     label: "Community",
     items: [
       { label: "Alumni Directory", href: "/directory", icon: Users },
+      { label: "Cohorts", href: "/cohorts", icon: Users },
       { label: "Mentorship", href: "/mentorship", icon: Handshake },
       { label: "Committees", href: "/committees", icon: Users },
     ],
@@ -63,7 +64,9 @@ const baseNavGroups: Array<{ label: string; items: NavItem[] }> = [
   },
   {
     label: "Give Back",
-    items: [{ label: "Donate", href: "/donate", icon: HeartHandshake, badge: "Live" }],
+    items: [
+      { label: "Donate", href: "/donate", icon: HeartHandshake, badge: "Live" },
+    ],
   },
   {
     label: "My Account",
@@ -91,6 +94,10 @@ const adminNavGroup: { label: string; items: NavItem[] } = {
     { label: "Donations", href: "/admin/donations", icon: HeartHandshake },
     { label: "Events", href: "/admin/events", icon: CalendarCheck2 },
     { label: "Campaigns", href: "/admin/campaigns", icon: FileText },
+    { label: "Registrations", href: "/admin/registrations", icon: Users },
+    { label: "School Records", href: "/admin/school-records", icon: FileText },
+    { label: "Cohorts", href: "/admin/cohorts", icon: Users },
+    { label: "Outreach", href: "/admin/outreach", icon: CalendarCheck2 },
     { label: "Elections", href: "/admin/elections", icon: Vote },
     { label: "Polls", href: "/admin/polls", icon: Vote },
     { label: "Committees", href: "/admin/committees", icon: Users },
@@ -101,6 +108,7 @@ const adminNavGroup: { label: string; items: NavItem[] } = {
 const mobileNavItems: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutGrid },
   { label: "Directory", href: "/directory", icon: Users },
+  { label: "Cohorts", href: "/cohorts", icon: Users },
   { label: "Careers", href: "/careers", icon: BriefcaseBusiness },
   { label: "Events", href: "/events", icon: CalendarCheck2 },
   { label: "Voting", href: "/voting", icon: Vote },
@@ -115,6 +123,10 @@ const mobileAdminNavItems: NavItem[] = [
   { label: "Careers", href: "/admin/careers", icon: BriefcaseBusiness },
   { label: "Events", href: "/admin/events", icon: CalendarCheck2 },
   { label: "Elections", href: "/admin/elections", icon: Vote },
+  { label: "Registrations", href: "/admin/registrations", icon: Users },
+  { label: "Records", href: "/admin/school-records", icon: FileText },
+  { label: "Cohorts", href: "/admin/cohorts", icon: Users },
+  { label: "Outreach", href: "/admin/outreach", icon: CalendarCheck2 },
   { label: "Committees", href: "/admin/committees", icon: Users },
   { label: "Constitution", href: "/admin/constitution", icon: FileText },
   { label: "Donate", href: "/admin/donations", icon: HeartHandshake },
@@ -145,10 +157,10 @@ export function Sidebar({ user }: { user: SidebarUser }) {
               priority
             />
             <div className="min-w-0">
-              <p className="font-[var(--font-ui)] text-[1.05rem] font-semibold leading-tight text-[var(--white)]">
+              <p className="text-[1.05rem] leading-tight font-[var(--font-ui)] font-semibold text-[var(--white)]">
                 BICKOSA
               </p>
-              <p className="mt-0.5 text-[10px] uppercase tracking-[0.16em] text-[var(--navy-300)]">
+              <p className="mt-0.5 text-[10px] tracking-[0.16em] text-[var(--navy-300)] uppercase">
                 Alumni Portal
               </p>
             </div>
@@ -163,15 +175,25 @@ export function Sidebar({ user }: { user: SidebarUser }) {
                 className="border-[color:rgba(255,255,255,0.24)] bg-[var(--navy-700)] text-[var(--white)]"
               />
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-[var(--white)]">{memberName}</p>
+                <p className="truncate text-sm font-semibold text-[var(--white)]">
+                  {memberName}
+                </p>
                 <p className="text-xs text-[var(--navy-300)]">Class of ----</p>
               </div>
             </div>
-            <Badge variant="gold" size="sm" className="mt-3 h-5 px-2 text-[10px] uppercase tracking-wide">
+            <Badge
+              variant="gold"
+              size="sm"
+              className="mt-3 h-5 px-2 text-[10px] tracking-wide uppercase"
+            >
               Verified
             </Badge>
             {isAdmin ? (
-              <Badge variant="outline" size="sm" className="mt-2 h-5 px-2 text-[10px] uppercase tracking-wide">
+              <Badge
+                variant="outline"
+                size="sm"
+                className="mt-2 h-5 px-2 text-[10px] tracking-wide uppercase"
+              >
                 ADMIN
               </Badge>
             ) : null}
@@ -181,7 +203,7 @@ export function Sidebar({ user }: { user: SidebarUser }) {
         <nav className="flex-1 overflow-y-auto px-3 py-4">
           {navGroups.map((group) => (
             <div key={group.label} className="mb-5">
-              <p className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--navy-400)]">
+              <p className="mb-2 px-2 text-[10px] font-semibold tracking-[0.14em] text-[var(--navy-400)] uppercase">
                 {group.label}
               </p>
               <div className="space-y-1">
@@ -202,7 +224,7 @@ export function Sidebar({ user }: { user: SidebarUser }) {
                       <Icon className="size-4 shrink-0" />
                       <span className="truncate">{item.label}</span>
                       {item.badge ? (
-                        <span className="ml-auto rounded-full bg-[var(--gold-500)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--navy-900)]">
+                        <span className="ml-auto rounded-full bg-[var(--gold-500)] px-2 py-0.5 text-[10px] font-semibold tracking-wide text-[var(--navy-900)] uppercase">
                           {item.badge}
                         </span>
                       ) : null}
@@ -216,7 +238,10 @@ export function Sidebar({ user }: { user: SidebarUser }) {
 
         <footer className="border-t border-[color:rgba(255,255,255,0.08)] px-5 py-4 text-xs text-[var(--navy-300)]">
           <p>BCK SSS · Luzira, Kampala</p>
-          <Link href="/privacy-policy" className="mt-1 inline-block hover:text-[var(--white)]">
+          <Link
+            href="/privacy-policy"
+            className="mt-1 inline-block hover:text-[var(--white)]"
+          >
             Privacy Policy
           </Link>
         </footer>
@@ -235,7 +260,12 @@ export function Sidebar({ user }: { user: SidebarUser }) {
                 active ? "text-[var(--gold-500)]" : "text-[var(--navy-200)]",
               )}
             >
-              <Icon className={cn("size-4", active ? "text-[var(--gold-500)]" : "text-[var(--white)]")} />
+              <Icon
+                className={cn(
+                  "size-4",
+                  active ? "text-[var(--gold-500)]" : "text-[var(--white)]",
+                )}
+              />
               <span>{item.label}</span>
             </Link>
           );

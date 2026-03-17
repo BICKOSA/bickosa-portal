@@ -20,6 +20,10 @@ export const verificationStatusEnum = pgEnum("verification_status", [
   "verified",
   "rejected",
 ]);
+export const registrationVerificationStatusEnum = pgEnum(
+  "registration_verification_status",
+  ["pending", "verified", "rejected", "duplicate"],
+);
 
 export const membershipTierEnum = pgEnum("membership_tier", [
   "standard",
@@ -122,6 +126,13 @@ export const documentCategoryEnum = pgEnum("document_category", [
   "policy",
   "other",
 ]);
+export const whatsappGroupTypeEnum = pgEnum("whatsapp_group_type", [
+  "cohort",
+  "regional",
+  "sports",
+  "leadership",
+  "general",
+]);
 
 export const userRoleEnum = pgEnum("user_role", ["member", "admin"]);
 export const deletionRequestStatusEnum = pgEnum("deletion_request_status", [
@@ -167,12 +178,10 @@ export const committeeStatusEnum = pgEnum("committee_status", [
   "active",
   "dissolved",
 ]);
-export const committeeNominationStatusEnum = pgEnum("committee_nomination_status", [
-  "pending",
-  "confirmed_willing",
-  "declined",
-  "appointed",
-]);
+export const committeeNominationStatusEnum = pgEnum(
+  "committee_nomination_status",
+  ["pending", "confirmed_willing", "declined", "appointed"],
+);
 export const amendmentProposalStatusEnum = pgEnum("amendment_proposal_status", [
   "draft",
   "open_for_comment",
@@ -238,7 +247,9 @@ export const accounts = pgTable(
     refreshToken: text("refresh_token"),
     expiresAt: timestamp("expires_at", { withTimezone: true }),
     idToken: text("id_token"),
-    accessTokenExpiresAt: timestamp("access_token_expires_at", { withTimezone: true }),
+    accessTokenExpiresAt: timestamp("access_token_expires_at", {
+      withTimezone: true,
+    }),
     refreshTokenExpiresAt: timestamp("refresh_token_expires_at", {
       withTimezone: true,
     }),
@@ -301,6 +312,7 @@ export const alumniProfiles = pgTable("alumni_profiles", {
   lastName: varchar("last_name", { length: 120 }).notNull(),
   yearOfEntry: integer("year_of_entry"),
   yearOfCompletion: integer("year_of_completion"),
+  graduationYear: integer("graduation_year"),
   currentJobTitle: varchar("current_job_title", { length: 255 }),
   currentEmployer: varchar("current_employer", { length: 255 }),
   industry: varchar("industry", { length: 120 }),
@@ -321,7 +333,9 @@ export const alumniProfiles = pgTable("alumni_profiles", {
   membershipTier: membershipTierEnum("membership_tier")
     .default("standard")
     .notNull(),
-  membershipExpiresAt: timestamp("membership_expires_at", { withTimezone: true }),
+  membershipExpiresAt: timestamp("membership_expires_at", {
+    withTimezone: true,
+  }),
   chapterId: uuid("chapter_id").references(() => chapters.id, {
     onDelete: "set null",
   }),
@@ -335,6 +349,160 @@ export const alumniProfiles = pgTable("alumni_profiles", {
     .defaultNow()
     .notNull(),
 });
+
+export const alumniRegistrations = pgTable(
+  "alumni_registrations",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    fullName: text("full_name").notNull(),
+    email: varchar("email", { length: 255 }).notNull(),
+    phone: varchar("phone", { length: 32 }),
+    graduationYear: integer("graduation_year").notNull(),
+    stream: varchar("stream", { length: 120 }),
+    house: varchar("house", { length: 120 }),
+    notableTeachers: text("notable_teachers"),
+    currentLocation: varchar("current_location", { length: 255 }),
+    occupation: varchar("occupation", { length: 255 }),
+    linkedinUrl: text("linkedin_url"),
+    howTheyHeard: varchar("how_they_heard", { length: 255 }),
+    verificationStatus: registrationVerificationStatusEnum(
+      "verification_status",
+    )
+      .default("pending")
+      .notNull(),
+    verificationNotes: text("verification_notes"),
+    schoolRecordMatch: boolean("school_record_match"),
+    reviewedBy: uuid("reviewed_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    convertedToUserId: uuid("converted_to_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    submissionIp: varchar("submission_ip", { length: 64 }),
+  },
+  (table) => ({
+    emailIdx: index("alumni_registrations_email_idx").on(table.email),
+    graduationYearIdx: index("alumni_registrations_graduation_year_idx").on(
+      table.graduationYear,
+    ),
+    statusIdx: index("alumni_registrations_status_idx").on(
+      table.verificationStatus,
+    ),
+    createdAtIdx: index("alumni_registrations_created_at_idx").on(
+      table.createdAt,
+    ),
+  }),
+);
+
+export const schoolEnrollmentRecords = pgTable(
+  "school_enrollment_records",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    fullName: text("full_name").notNull(),
+    graduationYear: integer("graduation_year").notNull(),
+    stream: varchar("stream", { length: 120 }),
+    house: varchar("house", { length: 120 }),
+    admissionNumber: varchar("admission_number", { length: 120 }),
+    sourceFile: text("source_file").notNull(),
+    uploadedBy: uuid("uploaded_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    uploadedAt: timestamp("uploaded_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => ({
+    graduationYearIdx: index(
+      "school_enrollment_records_graduation_year_idx",
+    ).on(table.graduationYear),
+    fullNameIdx: index("school_enrollment_records_full_name_idx").on(
+      table.fullName,
+    ),
+    sourceFileIdx: index("school_enrollment_records_source_file_idx").on(
+      table.sourceFile,
+    ),
+  }),
+);
+
+export const cohorts = pgTable(
+  "cohorts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    graduationYear: integer("graduation_year").notNull(),
+    name: varchar("name", { length: 255 }),
+    description: text("description"),
+    bannerImageUrl: text("banner_image_url"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => ({
+    graduationYearUnique: uniqueIndex("cohorts_graduation_year_unique").on(
+      table.graduationYear,
+    ),
+  }),
+);
+
+export const cohortRepresentatives = pgTable(
+  "cohort_representatives",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    cohortId: uuid("cohort_id")
+      .notNull()
+      .references(() => cohorts.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    role: varchar("role", { length: 100 }).default("Representative").notNull(),
+    appointedAt: timestamp("appointed_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    appointedBy: uuid("appointed_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    isActive: boolean("is_active").default(true).notNull(),
+  },
+  (table) => ({
+    cohortIdx: index("cohort_representatives_cohort_idx").on(table.cohortId),
+    userIdx: index("cohort_representatives_user_idx").on(table.userId),
+  }),
+);
+
+export const whatsappGroups = pgTable(
+  "whatsapp_groups",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: text("name").notNull(),
+    groupType: whatsappGroupTypeEnum("group_type").default("general").notNull(),
+    cohortId: uuid("cohort_id").references(() => cohorts.id, {
+      onDelete: "set null",
+    }),
+    adminUserId: uuid("admin_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    adminName: varchar("admin_name", { length: 255 }),
+    adminPhone: varchar("admin_phone", { length: 32 }),
+    memberCount: integer("member_count"),
+    inviteLink: text("invite_link"),
+    notes: text("notes"),
+    lastOutreachAt: timestamp("last_outreach_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => ({
+    typeIdx: index("whatsapp_groups_type_idx").on(table.groupType),
+    cohortIdx: index("whatsapp_groups_cohort_idx").on(table.cohortId),
+    updatedAtIdx: index("whatsapp_groups_updated_at_idx").on(table.updatedAt),
+  }),
+);
 
 export const verificationEvents = pgTable("verification_events", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -361,7 +529,8 @@ export const consentLogs = pgTable("consent_logs", {
   action: varchar("action", { length: 64 }),
   resourceType: varchar("resource_type", { length: 64 }),
   resourceId: uuid("resource_id"),
-  metadata: jsonb("metadata").$type<Record<string, string | number | boolean | null>>(),
+  metadata:
+    jsonb("metadata").$type<Record<string, string | number | boolean | null>>(),
   ipAddress: varchar("ip_address", { length: 64 }),
   userAgent: text("user_agent"),
   createdAt: timestamp("created_at", { withTimezone: true })
@@ -383,7 +552,9 @@ export const privacySettings = pgTable("privacy_settings", {
     .default(false)
     .notNull(),
   showOnDonorWall: boolean("show_on_donor_wall").default(true).notNull(),
-  receiveEventReminders: boolean("receive_event_reminders").default(true).notNull(),
+  receiveEventReminders: boolean("receive_event_reminders")
+    .default(true)
+    .notNull(),
   receiveNewsletter: boolean("receive_newsletter").default(true).notNull(),
   receiveMentorshipNotifications: boolean("receive_mentorship_notifications")
     .default(true)
@@ -417,7 +588,9 @@ export const events = pgTable("events", {
   type: eventTypeEnum("type").notNull(),
   startAt: timestamp("start_at", { withTimezone: true }).notNull(),
   endAt: timestamp("end_at", { withTimezone: true }),
-  timezone: varchar("timezone", { length: 120 }).default("Africa/Kampala").notNull(),
+  timezone: varchar("timezone", { length: 120 })
+    .default("Africa/Kampala")
+    .notNull(),
   locationName: varchar("location_name", { length: 255 }),
   locationAddress: text("location_address"),
   locationCity: varchar("location_city", { length: 120 }),
@@ -619,10 +792,9 @@ export const sportsPlayerStats = pgTable(
       .notNull(),
   },
   (table) => ({
-    seasonPlayerUnique: uniqueIndex("sports_player_stats_season_player_unique").on(
-      table.seasonId,
-      table.playerId,
-    ),
+    seasonPlayerUnique: uniqueIndex(
+      "sports_player_stats_season_player_unique",
+    ).on(table.seasonId, table.playerId),
   }),
 );
 
@@ -645,28 +817,30 @@ export const mentorshipRequests = pgTable("mentorship_requests", {
   respondedAt: timestamp("responded_at", { withTimezone: true }),
 });
 
-export const mentorshipPreferences = pgTable(
-  "mentorship_preferences",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
-      .notNull()
-      .unique()
-      .references(() => users.id, { onDelete: "cascade" }),
-    isAvailable: boolean("is_available").default(false).notNull(),
-    focusAreas: text("focus_areas").array().default(sql`ARRAY[]::text[]`).notNull(),
-    maxMentees: integer("max_mentees").default(1).notNull(),
-    contactMethod: mentorshipContactMethodEnum("contact_method").default("email").notNull(),
-    schedulingUrl: text("scheduling_url"),
-    mentorshipBio: varchar("mentorship_bio", { length: 280 }),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
-  },
-);
+export const mentorshipPreferences = pgTable("mentorship_preferences", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .unique()
+    .references(() => users.id, { onDelete: "cascade" }),
+  isAvailable: boolean("is_available").default(false).notNull(),
+  focusAreas: text("focus_areas")
+    .array()
+    .default(sql`ARRAY[]::text[]`)
+    .notNull(),
+  maxMentees: integer("max_mentees").default(1).notNull(),
+  contactMethod: mentorshipContactMethodEnum("contact_method")
+    .default("email")
+    .notNull(),
+  schedulingUrl: text("scheduling_url"),
+  mentorshipBio: varchar("mentorship_bio", { length: 280 }),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
 
 export const jobPostings = pgTable("job_postings", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -747,7 +921,9 @@ export const portalAnalyticsEvents = pgTable("portal_analytics_events", {
   id: uuid("id").defaultRandom().primaryKey(),
   eventName: varchar("event_name", { length: 120 }).notNull(),
   userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
-  properties: jsonb("properties").$type<Record<string, string | number | boolean | null>>().notNull(),
+  properties: jsonb("properties")
+    .$type<Record<string, string | number | boolean | null>>()
+    .notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
@@ -768,28 +944,38 @@ export const notificationDispatchLog = pgTable(
       .notNull(),
   },
   (table) => ({
-    idempotencyKeyUnique: uniqueIndex("notification_dispatch_log_idempotency_key_unique").on(
-      table.idempotencyKey,
-    ),
+    idempotencyKeyUnique: uniqueIndex(
+      "notification_dispatch_log_idempotency_key_unique",
+    ).on(table.idempotencyKey),
   }),
 );
 
 export const electionCycles = pgTable(
   "election_cycles",
   {
-    id: uuid("id").default(sql`uuid_generate_v4()`).primaryKey(),
+    id: uuid("id")
+      .default(sql`uuid_generate_v4()`)
+      .primaryKey(),
     title: text("title").notNull(),
     description: text("description"),
-    nominationOpens: timestamp("nomination_opens", { withTimezone: true }).notNull(),
-    nominationCloses: timestamp("nomination_closes", { withTimezone: true }).notNull(),
+    nominationOpens: timestamp("nomination_opens", {
+      withTimezone: true,
+    }).notNull(),
+    nominationCloses: timestamp("nomination_closes", {
+      withTimezone: true,
+    }).notNull(),
     votingOpens: timestamp("voting_opens", { withTimezone: true }).notNull(),
     votingCloses: timestamp("voting_closes", { withTimezone: true }).notNull(),
     resultsPublished: boolean("results_published").default(false).notNull(),
     status: electionCycleStatusEnum("status").default("draft").notNull(),
     quorumPercent: integer("quorum_percent").default(25).notNull(),
     createdBy: uuid("created_by").references(() => users.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
     statusIdx: index("election_cycles_status_idx").on(table.status),
@@ -797,7 +983,9 @@ export const electionCycles = pgTable(
 );
 
 export const electionPositions = pgTable("election_positions", {
-  id: uuid("id").default(sql`uuid_generate_v4()`).primaryKey(),
+  id: uuid("id")
+    .default(sql`uuid_generate_v4()`)
+    .primaryKey(),
   electionCycleId: uuid("election_cycle_id")
     .notNull()
     .references(() => electionCycles.id, { onDelete: "cascade" }),
@@ -806,13 +994,17 @@ export const electionPositions = pgTable("election_positions", {
   maxWinners: integer("max_winners").default(1).notNull(),
   maxNominations: integer("max_nominations").default(10).notNull(),
   sortOrder: integer("sort_order").default(0).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });
 
 export const nominations = pgTable(
   "nominations",
   {
-    id: uuid("id").default(sql`uuid_generate_v4()`).primaryKey(),
+    id: uuid("id")
+      .default(sql`uuid_generate_v4()`)
+      .primaryKey(),
     electionCycleId: uuid("election_cycle_id")
       .notNull()
       .references(() => electionCycles.id, { onDelete: "cascade" }),
@@ -830,14 +1022,17 @@ export const nominations = pgTable(
     reviewedBy: uuid("reviewed_by").references(() => users.id),
     reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
     reviewNote: text("review_note"),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
-    positionNomineeUnique: uniqueIndex("nominations_position_nominee_unique").on(
-      table.positionId,
-      table.nomineeId,
-    ),
+    positionNomineeUnique: uniqueIndex(
+      "nominations_position_nominee_unique",
+    ).on(table.positionId, table.nomineeId),
     cycleStatusIdx: index("nominations_election_cycle_status_idx").on(
       table.electionCycleId,
       table.status,
@@ -849,7 +1044,9 @@ export const nominations = pgTable(
 export const electionVotes = pgTable(
   "election_votes",
   {
-    id: uuid("id").default(sql`uuid_generate_v4()`).primaryKey(),
+    id: uuid("id")
+      .default(sql`uuid_generate_v4()`)
+      .primaryKey(),
     electionCycleId: uuid("election_cycle_id")
       .notNull()
       .references(() => electionCycles.id, { onDelete: "cascade" }),
@@ -879,7 +1076,9 @@ export const electionVotes = pgTable(
 export const generalPolls = pgTable(
   "general_polls",
   {
-    id: uuid("id").default(sql`uuid_generate_v4()`).primaryKey(),
+    id: uuid("id")
+      .default(sql`uuid_generate_v4()`)
+      .primaryKey(),
     title: text("title").notNull(),
     description: text("description"),
     pollType: pollTypeEnum("poll_type").default("yes_no_abstain").notNull(),
@@ -891,10 +1090,16 @@ export const generalPolls = pgTable(
     resultsPublished: boolean("results_published").default(false).notNull(),
     status: pollStatusEnum("status").default("draft").notNull(),
     createdBy: uuid("created_by").references(() => users.id),
-    targetAudience: pollTargetAudienceEnum("target_audience").default("verified_only").notNull(),
+    targetAudience: pollTargetAudienceEnum("target_audience")
+      .default("verified_only")
+      .notNull(),
     chapterId: uuid("chapter_id").references(() => chapters.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
     statusIdx: index("general_polls_status_idx").on(table.status),
@@ -908,7 +1113,9 @@ export const generalPolls = pgTable(
 export const pollVotes = pgTable(
   "poll_votes",
   {
-    id: uuid("id").default(sql`uuid_generate_v4()`).primaryKey(),
+    id: uuid("id")
+      .default(sql`uuid_generate_v4()`)
+      .primaryKey(),
     pollId: uuid("poll_id")
       .notNull()
       .references(() => generalPolls.id, { onDelete: "cascade" }),
@@ -919,13 +1126,18 @@ export const pollVotes = pgTable(
     castAt: timestamp("cast_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
-    pollVoterUnique: uniqueIndex("poll_votes_poll_voter_unique").on(table.pollId, table.voterId),
+    pollVoterUnique: uniqueIndex("poll_votes_poll_voter_unique").on(
+      table.pollId,
+      table.voterId,
+    ),
     pollIdIdx: index("poll_votes_poll_id_idx").on(table.pollId),
   }),
 );
 
 export const governanceAppointments = pgTable("governance_appointments", {
-  id: uuid("id").default(sql`uuid_generate_v4()`).primaryKey(),
+  id: uuid("id")
+    .default(sql`uuid_generate_v4()`)
+    .primaryKey(),
   userId: uuid("user_id")
     .notNull()
     .references(() => users.id),
@@ -934,22 +1146,34 @@ export const governanceAppointments = pgTable("governance_appointments", {
   termEnd: date("term_end"),
   isCurrent: boolean("is_current").default(true).notNull(),
   appointedBy: uuid("appointed_by").references(() => users.id),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });
 
 export const committees = pgTable(
   "committees",
   {
-    id: uuid("id").default(sql`uuid_generate_v4()`).primaryKey(),
+    id: uuid("id")
+      .default(sql`uuid_generate_v4()`)
+      .primaryKey(),
     name: text("name").notNull(),
     purpose: text("purpose").notNull(),
     maxMembers: integer("max_members"),
-    nominationOpens: timestamp("nomination_opens", { withTimezone: true }).notNull(),
-    nominationCloses: timestamp("nomination_closes", { withTimezone: true }).notNull(),
+    nominationOpens: timestamp("nomination_opens", {
+      withTimezone: true,
+    }).notNull(),
+    nominationCloses: timestamp("nomination_closes", {
+      withTimezone: true,
+    }).notNull(),
     status: committeeStatusEnum("status").default("draft").notNull(),
     createdBy: uuid("created_by").references(() => users.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
     statusIdx: index("committees_status_idx").on(table.status),
@@ -963,7 +1187,9 @@ export const committees = pgTable(
 export const committeeNominations = pgTable(
   "committee_nominations",
   {
-    id: uuid("id").default(sql`uuid_generate_v4()`).primaryKey(),
+    id: uuid("id")
+      .default(sql`uuid_generate_v4()`)
+      .primaryKey(),
     committeeId: uuid("committee_id")
       .notNull()
       .references(() => committees.id, { onDelete: "cascade" }),
@@ -974,22 +1200,29 @@ export const committeeNominations = pgTable(
       .notNull()
       .references(() => users.id),
     reason: text("reason"),
-    status: committeeNominationStatusEnum("status").default("pending").notNull(),
-    confirmationSentAt: timestamp("confirmation_sent_at", { withTimezone: true }),
+    status: committeeNominationStatusEnum("status")
+      .default("pending")
+      .notNull(),
+    confirmationSentAt: timestamp("confirmation_sent_at", {
+      withTimezone: true,
+    }),
     respondedAt: timestamp("responded_at", { withTimezone: true }),
     responseNote: text("response_note"),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
-    committeeNomineeUnique: uniqueIndex("committee_nominations_committee_nominee_unique").on(
-      table.committeeId,
-      table.nomineeId,
-    ),
+    committeeNomineeUnique: uniqueIndex(
+      "committee_nominations_committee_nominee_unique",
+    ).on(table.committeeId, table.nomineeId),
     committeeStatusIdx: index("committee_nominations_committee_status_idx").on(
       table.committeeId,
       table.status,
     ),
-    nominatedByIdx: index("committee_nominations_nominated_by_idx").on(table.nominatedById),
+    nominatedByIdx: index("committee_nominations_nominated_by_idx").on(
+      table.nominatedById,
+    ),
     nomineeIdx: index("committee_nominations_nominee_idx").on(table.nomineeId),
   }),
 );
@@ -997,7 +1230,9 @@ export const committeeNominations = pgTable(
 export const committeeMembers = pgTable(
   "committee_members",
   {
-    id: uuid("id").default(sql`uuid_generate_v4()`).primaryKey(),
+    id: uuid("id")
+      .default(sql`uuid_generate_v4()`)
+      .primaryKey(),
     committeeId: uuid("committee_id")
       .notNull()
       .references(() => committees.id, { onDelete: "cascade" }),
@@ -1005,62 +1240,86 @@ export const committeeMembers = pgTable(
       .notNull()
       .references(() => users.id),
     role: text("role").default("Member").notNull(),
-    appointedAt: timestamp("appointed_at", { withTimezone: true }).defaultNow().notNull(),
+    appointedAt: timestamp("appointed_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
     appointedBy: uuid("appointed_by").references(() => users.id),
   },
   (table) => ({
-    committeeMemberUnique: uniqueIndex("committee_members_committee_user_unique").on(
+    committeeMemberUnique: uniqueIndex(
+      "committee_members_committee_user_unique",
+    ).on(table.committeeId, table.userId),
+    committeeIdx: index("committee_members_committee_idx").on(
       table.committeeId,
-      table.userId,
     ),
-    committeeIdx: index("committee_members_committee_idx").on(table.committeeId),
   }),
 );
 
 export const constitutionVersions = pgTable(
   "constitution_versions",
   {
-    id: uuid("id").default(sql`uuid_generate_v4()`).primaryKey(),
+    id: uuid("id")
+      .default(sql`uuid_generate_v4()`)
+      .primaryKey(),
     versionTag: text("version_tag").notNull(),
     effectiveDate: date("effective_date").notNull(),
     documentUrl: text("document_url"),
     isCurrent: boolean("is_current").default(false).notNull(),
     notes: text("notes"),
     publishedBy: uuid("published_by").references(() => users.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
-    effectiveDateIdx: index("constitution_versions_effective_date_idx").on(table.effectiveDate),
+    effectiveDateIdx: index("constitution_versions_effective_date_idx").on(
+      table.effectiveDate,
+    ),
   }),
 );
 
 export const amendmentProposals = pgTable(
   "amendment_proposals",
   {
-    id: uuid("id").default(sql`uuid_generate_v4()`).primaryKey(),
-    constitutionVersionId: uuid("constitution_version_id").references(() => constitutionVersions.id, {
+    id: uuid("id")
+      .default(sql`uuid_generate_v4()`)
+      .primaryKey(),
+    constitutionVersionId: uuid("constitution_version_id").references(
+      () => constitutionVersions.id,
+      {
+        onDelete: "set null",
+      },
+    ),
+    proposedBy: uuid("proposed_by").references(() => users.id, {
       onDelete: "set null",
     }),
-    proposedBy: uuid("proposed_by").references(() => users.id, { onDelete: "set null" }),
     clauseReference: text("clause_reference"),
     currentText: text("current_text"),
     proposedText: text("proposed_text"),
     rationale: text("rationale").notNull(),
     status: amendmentProposalStatusEnum("status").default("draft").notNull(),
     commentClosesAt: timestamp("comment_closes_at", { withTimezone: true }),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
     statusIdx: index("amendment_proposals_status_idx").on(table.status),
-    versionIdx: index("amendment_proposals_version_idx").on(table.constitutionVersionId),
+    versionIdx: index("amendment_proposals_version_idx").on(
+      table.constitutionVersionId,
+    ),
   }),
 );
 
 export const amendmentComments = pgTable(
   "amendment_comments",
   {
-    id: uuid("id").default(sql`uuid_generate_v4()`).primaryKey(),
+    id: uuid("id")
+      .default(sql`uuid_generate_v4()`)
+      .primaryKey(),
     amendmentProposalId: uuid("amendment_proposal_id")
       .notNull()
       .references(() => amendmentProposals.id, { onDelete: "cascade" }),
@@ -1068,10 +1327,14 @@ export const amendmentComments = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     comment: text("comment").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
-    proposalIdx: index("amendment_comments_proposal_idx").on(table.amendmentProposalId),
+    proposalIdx: index("amendment_comments_proposal_idx").on(
+      table.amendmentProposalId,
+    ),
     authorIdx: index("amendment_comments_author_idx").on(table.authorId),
   }),
 );
@@ -1079,19 +1342,32 @@ export const amendmentComments = pgTable(
 export const agmPetitions = pgTable(
   "agm_petitions",
   {
-    id: uuid("id").default(sql`uuid_generate_v4()`).primaryKey(),
-    agmEventId: uuid("agm_event_id").references(() => events.id, { onDelete: "set null" }),
-    amendmentProposalId: uuid("amendment_proposal_id").references(() => amendmentProposals.id, {
+    id: uuid("id")
+      .default(sql`uuid_generate_v4()`)
+      .primaryKey(),
+    agmEventId: uuid("agm_event_id").references(() => events.id, {
       onDelete: "set null",
     }),
+    amendmentProposalId: uuid("amendment_proposal_id").references(
+      () => amendmentProposals.id,
+      {
+        onDelete: "set null",
+      },
+    ),
     outcome: agmPetitionOutcomeEnum("outcome"),
     outcomeNotes: text("outcome_notes"),
     votedAt: timestamp("voted_at", { withTimezone: true }),
-    recordedBy: uuid("recorded_by").references(() => users.id, { onDelete: "set null" }),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    recordedBy: uuid("recorded_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
-    amendmentIdx: index("agm_petitions_amendment_idx").on(table.amendmentProposalId),
+    amendmentIdx: index("agm_petitions_amendment_idx").on(
+      table.amendmentProposalId,
+    ),
     agmEventIdx: index("agm_petitions_agm_event_idx").on(table.agmEventId),
   }),
 );
@@ -1106,6 +1382,26 @@ export type Verification = InferSelectModel<typeof verifications>;
 export type NewVerification = InferInsertModel<typeof verifications>;
 export type AlumniProfile = InferSelectModel<typeof alumniProfiles>;
 export type NewAlumniProfile = InferInsertModel<typeof alumniProfiles>;
+export type AlumniRegistration = InferSelectModel<typeof alumniRegistrations>;
+export type NewAlumniRegistration = InferInsertModel<
+  typeof alumniRegistrations
+>;
+export type SchoolEnrollmentRecord = InferSelectModel<
+  typeof schoolEnrollmentRecords
+>;
+export type NewSchoolEnrollmentRecord = InferInsertModel<
+  typeof schoolEnrollmentRecords
+>;
+export type Cohort = InferSelectModel<typeof cohorts>;
+export type NewCohort = InferInsertModel<typeof cohorts>;
+export type CohortRepresentative = InferSelectModel<
+  typeof cohortRepresentatives
+>;
+export type NewCohortRepresentative = InferInsertModel<
+  typeof cohortRepresentatives
+>;
+export type WhatsappGroup = InferSelectModel<typeof whatsappGroups>;
+export type NewWhatsappGroup = InferInsertModel<typeof whatsappGroups>;
 export type VerificationEvent = InferSelectModel<typeof verificationEvents>;
 export type NewVerificationEvent = InferInsertModel<typeof verificationEvents>;
 export type ConsentLog = InferSelectModel<typeof consentLogs>;
@@ -1134,22 +1430,36 @@ export type SportsPlayerStat = InferSelectModel<typeof sportsPlayerStats>;
 export type NewSportsPlayerStat = InferInsertModel<typeof sportsPlayerStats>;
 export type MentorshipRequest = InferSelectModel<typeof mentorshipRequests>;
 export type NewMentorshipRequest = InferInsertModel<typeof mentorshipRequests>;
-export type MentorshipPreference = InferSelectModel<typeof mentorshipPreferences>;
-export type NewMentorshipPreference = InferInsertModel<typeof mentorshipPreferences>;
+export type MentorshipPreference = InferSelectModel<
+  typeof mentorshipPreferences
+>;
+export type NewMentorshipPreference = InferInsertModel<
+  typeof mentorshipPreferences
+>;
 export type JobPosting = InferSelectModel<typeof jobPostings>;
 export type NewJobPosting = InferInsertModel<typeof jobPostings>;
 export type Document = InferSelectModel<typeof documents>;
 export type NewDocument = InferInsertModel<typeof documents>;
 export type DocumentDownloadLog = InferSelectModel<typeof documentDownloadLogs>;
-export type NewDocumentDownloadLog = InferInsertModel<typeof documentDownloadLogs>;
+export type NewDocumentDownloadLog = InferInsertModel<
+  typeof documentDownloadLogs
+>;
 export type Notification = InferSelectModel<typeof notifications>;
 export type NewNotification = InferInsertModel<typeof notifications>;
 export type DeletionRequest = InferSelectModel<typeof deletionRequests>;
 export type NewDeletionRequest = InferInsertModel<typeof deletionRequests>;
-export type PortalAnalyticsEvent = InferSelectModel<typeof portalAnalyticsEvents>;
-export type NewPortalAnalyticsEvent = InferInsertModel<typeof portalAnalyticsEvents>;
-export type NotificationDispatchLog = InferSelectModel<typeof notificationDispatchLog>;
-export type NewNotificationDispatchLog = InferInsertModel<typeof notificationDispatchLog>;
+export type PortalAnalyticsEvent = InferSelectModel<
+  typeof portalAnalyticsEvents
+>;
+export type NewPortalAnalyticsEvent = InferInsertModel<
+  typeof portalAnalyticsEvents
+>;
+export type NotificationDispatchLog = InferSelectModel<
+  typeof notificationDispatchLog
+>;
+export type NewNotificationDispatchLog = InferInsertModel<
+  typeof notificationDispatchLog
+>;
 export type ElectionCycle = InferSelectModel<typeof electionCycles>;
 export type NewElectionCycle = InferInsertModel<typeof electionCycles>;
 export type ElectionPosition = InferSelectModel<typeof electionPositions>;
@@ -1162,16 +1472,24 @@ export type GeneralPoll = InferSelectModel<typeof generalPolls>;
 export type NewGeneralPoll = InferInsertModel<typeof generalPolls>;
 export type PollVote = InferSelectModel<typeof pollVotes>;
 export type NewPollVote = InferInsertModel<typeof pollVotes>;
-export type GovernanceAppointment = InferSelectModel<typeof governanceAppointments>;
-export type NewGovernanceAppointment = InferInsertModel<typeof governanceAppointments>;
+export type GovernanceAppointment = InferSelectModel<
+  typeof governanceAppointments
+>;
+export type NewGovernanceAppointment = InferInsertModel<
+  typeof governanceAppointments
+>;
 export type Committee = InferSelectModel<typeof committees>;
 export type NewCommittee = InferInsertModel<typeof committees>;
 export type CommitteeNomination = InferSelectModel<typeof committeeNominations>;
-export type NewCommitteeNomination = InferInsertModel<typeof committeeNominations>;
+export type NewCommitteeNomination = InferInsertModel<
+  typeof committeeNominations
+>;
 export type CommitteeMember = InferSelectModel<typeof committeeMembers>;
 export type NewCommitteeMember = InferInsertModel<typeof committeeMembers>;
 export type ConstitutionVersion = InferSelectModel<typeof constitutionVersions>;
-export type NewConstitutionVersion = InferInsertModel<typeof constitutionVersions>;
+export type NewConstitutionVersion = InferInsertModel<
+  typeof constitutionVersions
+>;
 export type AmendmentProposal = InferSelectModel<typeof amendmentProposals>;
 export type NewAmendmentProposal = InferInsertModel<typeof amendmentProposals>;
 export type AmendmentComment = InferSelectModel<typeof amendmentComments>;

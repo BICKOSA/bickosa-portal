@@ -4,6 +4,8 @@ import { getSessionCookie } from "better-auth/cookies";
 
 const PUBLIC_PATHS = new Set([
   "/",
+  "/join",
+  "/join/success",
   "/login",
   "/register",
   "/verify-email",
@@ -14,6 +16,7 @@ const PUBLIC_PATHS = new Set([
 const PROTECTED_REWRITE_PREFIXES = [
   "/dashboard",
   "/directory",
+  "/cohorts",
   "/profile",
   "/admin",
   "/mentorship",
@@ -40,6 +43,12 @@ type RateLimitEntry = {
 
 const RATE_LIMIT_RULES: RateLimitRule[] = [
   {
+    prefix: "/api/public/join",
+    limit: 15,
+    windowMs: 60_000,
+    keyType: "ip",
+  },
+  {
     prefix: "/api/donations",
     limit: 10,
     windowMs: 60_000,
@@ -65,7 +74,10 @@ const globalRateLimitStore = globalThis as typeof globalThis & {
 
 function getRateLimitStore(): Map<string, RateLimitEntry> {
   if (!globalRateLimitStore.__bickosaRateLimitStore) {
-    globalRateLimitStore.__bickosaRateLimitStore = new Map<string, RateLimitEntry>();
+    globalRateLimitStore.__bickosaRateLimitStore = new Map<
+      string,
+      RateLimitEntry
+    >();
   }
 
   return globalRateLimitStore.__bickosaRateLimitStore;
@@ -89,7 +101,9 @@ function getRequestIp(request: NextRequest): string {
 }
 
 function applyRateLimit(request: NextRequest): NextResponse | null {
-  const rule = RATE_LIMIT_RULES.find((item) => matchesPrefix(request.nextUrl.pathname, item.prefix));
+  const rule = RATE_LIMIT_RULES.find((item) =>
+    matchesPrefix(request.nextUrl.pathname, item.prefix),
+  );
   if (!rule) {
     return null;
   }
@@ -109,7 +123,10 @@ function applyRateLimit(request: NextRequest): NextResponse | null {
   }
 
   if (current.count >= rule.limit) {
-    const retryAfterSeconds = Math.max(1, Math.ceil((current.resetAt - now) / 1000));
+    const retryAfterSeconds = Math.max(
+      1,
+      Math.ceil((current.resetAt - now) / 1000),
+    );
     return NextResponse.json(
       {
         message: "Too many requests. Please try again shortly.",
@@ -142,13 +159,17 @@ function isPublicPath(pathname: string): boolean {
 
 function isProtectedPath(pathname: string): boolean {
   return (
-    PROTECTED_REWRITE_PREFIXES.some((prefix) => matchesPrefix(pathname, prefix)) ||
+    PROTECTED_REWRITE_PREFIXES.some((prefix) =>
+      matchesPrefix(pathname, prefix),
+    ) ||
     PROTECTED_DIRECT_PREFIXES.some((prefix) => matchesPrefix(pathname, prefix))
   );
 }
 
 function shouldRewriteToPortal(pathname: string): boolean {
-  return PROTECTED_REWRITE_PREFIXES.some((prefix) => matchesPrefix(pathname, prefix));
+  return PROTECTED_REWRITE_PREFIXES.some((prefix) =>
+    matchesPrefix(pathname, prefix),
+  );
 }
 
 export async function proxy(request: NextRequest) {
@@ -192,6 +213,7 @@ export const config = {
     "/portal/:path*",
     "/dashboard/:path*",
     "/directory/:path*",
+    "/cohorts/:path*",
     "/profile/:path*",
     "/admin/:path*",
     "/mentorship/:path*",
@@ -203,6 +225,7 @@ export const config = {
     "/settings/:path*",
     "/governance/:path*",
     "/api/donations/:path*",
+    "/api/public/join/:path*",
     "/api/directory/:path*",
     "/api/upload/:path*",
   ],
