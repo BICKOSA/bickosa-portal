@@ -18,11 +18,13 @@ const titleMatchers: Array<{ match: string; title: string }> = [
   { match: "/directory", title: "Alumni Directory" },
   { match: "/mentorship", title: "Mentorship" },
   { match: "/events", title: "Events & RSVPs" },
+  { match: "/careers", title: "Careers" },
   { match: "/sports", title: "Sports League" },
   { match: "/donate", title: "Donate" },
   { match: "/profile", title: "My Profile" },
   { match: "/settings", title: "Settings" },
   { match: "/governance", title: "Governance & Docs" },
+  { match: "/admin/careers", title: "Admin Careers" },
   { match: "/admin/dashboard", title: "Admin Dashboard" },
   { match: "/admin", title: "Admin" },
 ];

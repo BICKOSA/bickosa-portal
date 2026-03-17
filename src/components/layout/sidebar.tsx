@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  BriefcaseBusiness,
   CalendarCheck2,
   FileText,
   Handshake,
@@ -50,6 +51,7 @@ const navGroups: Array<{ label: string; items: NavItem[] }> = [
     label: "Engage",
     items: [
       { label: "Events & RSVPs", href: "/events", icon: CalendarCheck2 },
+      { label: "Careers", href: "/careers", icon: BriefcaseBusiness },
       { label: "Sports League", href: "/sports", icon: Trophy, badge: "Soon" },
     ],
   },
@@ -73,6 +75,7 @@ const navGroups: Array<{ label: string; items: NavItem[] }> = [
 const mobileNavItems: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutGrid },
   { label: "Directory", href: "/directory", icon: Users },
+  { label: "Careers", href: "/careers", icon: BriefcaseBusiness },
   { label: "Events", href: "/events", icon: CalendarCheck2 },
   { label: "Donate", href: "/donate", icon: HeartHandshake },
   { label: "Profile", href: "/profile", icon: UserCircle2 },
@@ -172,7 +175,7 @@ export function Sidebar({ user }: { user: SidebarUser }) {
         </footer>
       </aside>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 grid h-16 grid-cols-5 border-t border-[color:rgba(255,255,255,0.12)] bg-[color:rgba(13,27,62,0.98)] px-1 lg:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-40 grid h-16 grid-cols-6 border-t border-[color:rgba(255,255,255,0.12)] bg-[color:rgba(13,27,62,0.98)] px-1 lg:hidden">
         {mobileNavItems.map((item) => {
           const active = isActivePath(pathname, item.href);
           const Icon = item.icon;
