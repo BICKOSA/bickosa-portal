@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { getSessionCookie } from "better-auth/cookies";
 
 const PUBLIC_PATHS = new Set([
   "/",
@@ -167,6 +168,14 @@ export async function proxy(request: NextRequest) {
 
   if (isPublicPath(pathname) || !isProtectedPath(pathname)) {
     return NextResponse.next();
+  }
+
+  const sessionCookie = getSessionCookie(request);
+
+  if (!sessionCookie) {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("returnTo", pathname);
+    return NextResponse.redirect(loginUrl);
   }
 
   if (shouldRewriteToPortal(pathname)) {
