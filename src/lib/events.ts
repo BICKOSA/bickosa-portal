@@ -289,7 +289,7 @@ export async function listEventsForViewer(params: {
     db
       .select({
         eventId: eventRegistrations.eventId,
-        attendeeCount: sql<number>`count(*)::int`,
+        attendeeCount: sql<number>`count(*)::int`.as("attendee_count"),
       })
       .from(eventRegistrations)
       .where(eq(eventRegistrations.status, "attending"))
@@ -422,7 +422,7 @@ export async function getEventDetailBySlug(params: {
     db
       .select({
         eventId: eventRegistrations.eventId,
-        attendeeCount: sql<number>`count(*)::int`,
+        attendeeCount: sql<number>`count(*)::int`.as("attendee_count"),
       })
       .from(eventRegistrations)
       .where(eq(eventRegistrations.status, "attending"))
@@ -552,7 +552,7 @@ export async function getEventForRsvpValidation(eventId: string): Promise<{
     db
       .select({
         eventId: eventRegistrations.eventId,
-        attendeeCount: sql<number>`count(*)::int`,
+        attendeeCount: sql<number>`count(*)::int`.as("attendee_count"),
       })
       .from(eventRegistrations)
       .where(eq(eventRegistrations.status, "attending"))

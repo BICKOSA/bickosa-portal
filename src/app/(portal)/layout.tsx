@@ -12,8 +12,7 @@ import { db } from "@/lib/db";
 import { alumniProfiles, verificationEvents } from "@/lib/db/schema";
 import { PendingVerificationPage } from "@/app/(portal)/_components/pending-verification-page";
 import { RejectedVerificationPage } from "@/app/(portal)/_components/rejected-verification-page";
-
-const UNGATED_PREFIXES = ["/profile", "/settings"];
+import { VerificationGate } from "@/app/(portal)/_components/verification-gate";
 
 type PortalLayoutProps = {
   children: React.ReactNode;
@@ -58,14 +57,8 @@ export default async function PortalLayout({ children }: PortalLayoutProps) {
     columns: { id: true, verificationStatus: true },
   });
 
-  const url = headerList.get("x-pathname") ?? "";
-
-  const isUngatedPath = UNGATED_PREFIXES.some(
-    (prefix) => url === prefix || url.startsWith(`${prefix}/`),
-  );
-
   const isVerified = profile?.verificationStatus === "verified";
-  const needsGate = !isVerified && !isAdmin && !isUngatedPath;
+  const needsGate = !isVerified && !isAdmin;
 
   let gatedContent: React.ReactNode = null;
 
@@ -98,12 +91,18 @@ export default async function PortalLayout({ children }: PortalLayoutProps) {
           }
         >
           <Sidebar user={user} />
-          <SidebarInset className="min-h-screen bg-(--surface) text-(--text-1)">
+          <SidebarInset className="min-h-screen min-w-0 flex-1 bg-(--surface) text-(--text-1) md:mt-0">
             <Topbar user={user} />
             <div className="flex flex-1 flex-col">
               <div className="@container/main flex flex-1 flex-col gap-2">
-                <main className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-                  {gatedContent ?? children}
+                <main className="flex flex-col gap-4 px-4 py-4 md:gap-6 md:py-6 lg:px-6">
+                  {gatedContent ? (
+                    <VerificationGate gatedContent={gatedContent}>
+                      {children}
+                    </VerificationGate>
+                  ) : (
+                    children
+                  )}
                 </main>
               </div>
             </div>

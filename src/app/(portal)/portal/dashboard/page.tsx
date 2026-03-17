@@ -23,7 +23,7 @@ export default function PortalDashboardPage() {
   return (
     <>
       {/* Section cards */}
-      <div className="grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 *:data-[slot=card]:shadow-xs @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
         <Card className="@container/card bg-linear-to-t from-primary/5 to-card">
           <CardHeader className="border-none pb-1">
             <CardDescription>Total Members</CardDescription>
@@ -118,7 +118,7 @@ export default function PortalDashboardPage() {
       </div>
 
       {/* Content panels */}
-      <div className="grid gap-4 px-4 lg:grid-cols-3 lg:px-6">
+      <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Recent Activity</CardTitle>

@@ -211,11 +211,11 @@ export function Sidebar({ user }: { user: SidebarUser }) {
   const navGroups = isAdmin ? [...baseNavGroups, adminNavGroup] : baseNavGroups;
 
   return (
-    <DashboardSidebar collapsible="offcanvas">
+    <DashboardSidebar variant="inset" collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border px-2 py-3">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" render={<Link href="/dashboard" />}>
+            <SidebarMenuButton size="lg" tooltip="Dashboard" render={<Link href="/dashboard" />}>
               <Image
                 src="/logo.png"
                 alt="BICKOSA"
@@ -288,7 +288,7 @@ export function Sidebar({ user }: { user: SidebarUser }) {
       <SidebarFooter className="border-t border-sidebar-border px-2 py-3">
         <SidebarNavUser user={user} />
         {isAdmin ? (
-          <div className="px-2 pt-1">
+          <div className="px-2 pt-1 group-data-[collapsible=icon]:hidden">
             <Badge variant="gold" size="sm" className="h-5 px-2 text-[10px]">
               ADMIN
             </Badge>
