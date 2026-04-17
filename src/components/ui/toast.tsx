@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-type ToastVariant = "navy" | "success";
+type ToastVariant = "navy" | "success" | "warning";
 
 type ToastItem = {
   id: string;
@@ -31,6 +31,9 @@ const ToastContext = React.createContext<ToastContextValue | null>(null);
 function toastStyles(variant: ToastVariant) {
   if (variant === "success") {
     return "border-[var(--success)] bg-[var(--success-bg)] text-[var(--success)]";
+  }
+  if (variant === "warning") {
+    return "border-[var(--gold-500)] bg-[var(--gold-50)] text-[var(--gold-800)]";
   }
 
   return "border-[var(--navy-900)] bg-[var(--navy-900)] text-[var(--white)]";

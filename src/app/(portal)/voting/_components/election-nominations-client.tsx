@@ -164,7 +164,12 @@ export function ElectionNominationsClient({
       toast({ title: "Nomination failed", description: result.message });
       return;
     }
-    toast({ title: "Nomination submitted", description: result.message, variant: "success" });
+    toast({
+      title: result.warning ? "Nomination submitted with warning" : "Nomination submitted",
+      description: result.warning ?? result.message,
+      variant: result.warning ? "warning" : "success",
+      durationMs: result.warning ? 6500 : undefined,
+    });
     setSelfModalOpen(false);
     router.refresh();
   }
@@ -178,7 +183,12 @@ export function ElectionNominationsClient({
       toast({ title: "Peer nomination failed", description: result.message });
       return;
     }
-    toast({ title: "Peer nomination submitted", description: result.message, variant: "success" });
+    toast({
+      title: result.warning ? "Peer nomination submitted with warning" : "Peer nomination submitted",
+      description: result.warning ?? result.message,
+      variant: result.warning ? "warning" : "success",
+      durationMs: result.warning ? 6500 : undefined,
+    });
     setPeerModalOpen(false);
     setSelectedPeerNomineeId(null);
     setSearch("");

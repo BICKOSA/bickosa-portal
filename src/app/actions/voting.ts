@@ -1,6 +1,7 @@
 "use server";
 
 import { and, eq, inArray } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { createElement } from "react";
 import { z } from "zod";
@@ -21,7 +22,9 @@ import {
 import { sendEmail } from "@/lib/email/resend";
 import { createNotification, createNotificationsForUsers } from "@/lib/notifications/create-notification";
 
-type ActionResult = { ok: true; message: string } | { ok: false; message: string };
+type ActionResult =
+  | { ok: true; message: string; warning?: string }
+  | { ok: false; message: string };
 
 const selfNominationSchema = z.object({
   positionId: z.string().uuid(),
@@ -110,6 +113,16 @@ async function getPositionWithCycle(positionId: string) {
   return rows[0] ?? null;
 }
 
+async function runNonBlockingNominationTask(taskName: string, task: () => Promise<void>): Promise<boolean> {
+  try {
+    await task();
+    return true;
+  } catch (error) {
+    console.error(`[voting] ${taskName} failed`, error);
+    return false;
+  }
+}
+
 export async function submitSelfNomination(positionId: string, manifesto: string): Promise<ActionResult> {
   const session = await getSessionUser();
   if (!session) {
@@ -162,18 +175,30 @@ export async function submitSelfNomination(positionId: string, manifesto: string
   }
 
   const adminUserIds = await listAdminUserIds();
+  let adminNotificationDelivered = true;
   if (adminUserIds.length > 0) {
-    await createNotificationsForUsers({
-      userIds: adminUserIds,
-      type: "nomination_submitted",
-      title: "New nomination submitted",
-      body: `${session.user.name ?? "A member"} submitted a nomination for ${position.positionTitle}.`,
-      actionUrl: `/voting/elections/${position.cycleId}`,
-      idempotencyKeyPrefix: `nomination_submitted:${row.id}`,
+    adminNotificationDelivered = await runNonBlockingNominationTask("admin nomination notification", async () => {
+      await createNotificationsForUsers({
+        userIds: adminUserIds,
+        type: "nomination_submitted",
+        title: "New nomination submitted",
+        body: `${session.user.name ?? "A member"} submitted a nomination for ${position.positionTitle}.`,
+        actionUrl: `/voting/elections/${position.cycleId}`,
+        idempotencyKeyPrefix: `nomination_submitted:${row.id}`,
+      });
     });
   }
 
-  return { ok: true, message: "Nomination submitted for admin review." };
+  revalidatePath(`/voting/elections/${position.cycleId}`);
+  revalidatePath("/voting");
+
+  return {
+    ok: true,
+    message: "Nomination submitted for admin review.",
+    warning: adminNotificationDelivered
+      ? undefined
+      : "Your nomination was saved, but admins may not have been notified automatically.",
+  };
 }
 
 export async function submitPeerNomination(
@@ -234,38 +259,52 @@ export async function submitPeerNomination(
     return { ok: false, message: "This member already has a nomination for this position." };
   }
 
-  await createNotification({
-    userId: nominee.id,
-    type: "peer_nomination_received",
-    title: `You've been nominated for ${position.positionTitle}`,
-    body: "Accept your nomination and submit your manifesto.",
-    actionUrl: `/voting/elections/${position.cycleId}?nominationId=${row.id}`,
-    idempotencyKey: `peer_nomination_received:${row.id}:${nominee.id}`,
+  const appNotificationDelivered = await runNonBlockingNominationTask("peer nomination notification", async () => {
+    await createNotification({
+      userId: nominee.id,
+      type: "peer_nomination_received",
+      title: `You've been nominated for ${position.positionTitle}`,
+      body: "Accept your nomination and submit your manifesto.",
+      actionUrl: `/voting/elections/${position.cycleId}?nominationId=${row.id}`,
+      idempotencyKey: `peer_nomination_received:${row.id}:${nominee.id}`,
+    });
   });
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://portal.bickosa.org";
-  await sendEmail({
-    to: nominee.email,
-    subject: `You've been nominated for ${position.positionTitle}`,
-    react: (
-      createElement("div", null, [
-        createElement("p", { key: "greeting" }, `Hello ${nominee.name || "Member"},`),
-        createElement(
-          "p",
-          { key: "line2" },
-          `You have been nominated for ${position.positionTitle} in ${position.cycleTitle}.`,
-        ),
-        createElement(
-          "p",
-          { key: "line3" },
-          `Accept your nomination and submit your manifesto here: ${appUrl}/voting/elections/${position.cycleId}?nominationId=${row.id}`,
-        ),
-      ])
-    ),
-    text: `You've been nominated for ${position.positionTitle}. Accept and submit your manifesto at ${appUrl}/voting/elections/${position.cycleId}?nominationId=${row.id}`,
+  const emailDelivered = await runNonBlockingNominationTask("peer nomination email", async () => {
+    await sendEmail({
+      to: nominee.email,
+      subject: `You've been nominated for ${position.positionTitle}`,
+      react: (
+        createElement("div", null, [
+          createElement("p", { key: "greeting" }, `Hello ${nominee.name || "Member"},`),
+          createElement(
+            "p",
+            { key: "line2" },
+            `You have been nominated for ${position.positionTitle} in ${position.cycleTitle}.`,
+          ),
+          createElement(
+            "p",
+            { key: "line3" },
+            `Accept your nomination and submit your manifesto here: ${appUrl}/voting/elections/${position.cycleId}?nominationId=${row.id}`,
+          ),
+        ])
+      ),
+      text: `You've been nominated for ${position.positionTitle}. Accept and submit your manifesto at ${appUrl}/voting/elections/${position.cycleId}?nominationId=${row.id}`,
+    });
   });
 
-  return { ok: true, message: "Peer nomination submitted." };
+  revalidatePath(`/voting/elections/${position.cycleId}`);
+  revalidatePath("/voting");
+
+  return {
+    ok: true,
+    message: "Peer nomination submitted.",
+    warning:
+      appNotificationDelivered && emailDelivered
+        ? undefined
+        : "The nomination was saved, but nominee notification delivery may need manual follow-up.",
+  };
 }
 
 export async function acceptNomination(
@@ -301,6 +340,9 @@ export async function acceptNomination(
     })
     .where(eq(nominations.id, nomination.id));
 
+  revalidatePath(`/voting/elections/${nomination.electionCycleId}`);
+  revalidatePath("/voting");
+
   return { ok: true, message: "Nomination accepted and updated." };
 }
 
@@ -334,6 +376,9 @@ export async function withdrawNomination(nominationId: string): Promise<ActionRe
       updatedAt: new Date(),
     })
     .where(eq(nominations.id, nomination.id));
+
+  revalidatePath(`/voting/elections/${nomination.electionCycleId}`);
+  revalidatePath("/voting");
 
   return { ok: true, message: "Nomination withdrawn." };
 }
