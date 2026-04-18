@@ -48,24 +48,31 @@ const responseNoteSchema = z
   .max(500, "Response note must be 500 characters or fewer.")
   .optional();
 
-const createCommitteeSchema = z
-  .object({
-    name: z.string().trim().min(3).max(180),
-    purpose: z.string().trim().min(10).max(3000),
-    maxMembers: z.number().int().positive().nullable(),
-    nominationOpens: z.coerce.date(),
-    nominationCloses: z.coerce.date(),
-    status: z.enum(["draft", "nominations_open"]),
+const committeeFormFieldsSchema = z.object({
+  name: z.string().trim().min(3).max(180),
+  purpose: z.string().trim().min(10).max(3000),
+  maxMembers: z.number().int().positive().nullable(),
+  nominationOpens: z.coerce.date(),
+  nominationCloses: z.coerce.date(),
+  status: z.enum(["draft", "nominations_open"]),
+});
+
+const createCommitteeSchema = committeeFormFieldsSchema.refine(
+  (value) => value.nominationCloses > value.nominationOpens,
+  {
+    message: "Nomination close must be after nomination open.",
+    path: ["nominationCloses"],
+  },
+);
+
+const updateCommitteeSchema = committeeFormFieldsSchema
+  .omit({ status: true })
+  .extend({
+    committeeId: z.string().uuid(),
   })
   .refine((value) => value.nominationCloses > value.nominationOpens, {
     message: "Nomination close must be after nomination open.",
     path: ["nominationCloses"],
-  });
-
-const updateCommitteeSchema = createCommitteeSchema
-  .omit({ status: true })
-  .extend({
-    committeeId: z.string().uuid(),
   });
 
 const updateCommitteeStatusSchema = z.object({
