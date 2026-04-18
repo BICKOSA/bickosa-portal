@@ -18,6 +18,17 @@ import {
 const appName = "BICKOSA Alumni Portal";
 const appUrl = process.env.NEXT_PUBLIC_APP_URL;
 const isDevelopment = process.env.NODE_ENV === "development";
+const googleClientId = process.env.GOOGLE_CLIENT_ID;
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+const googleSocialProviders =
+  googleClientId && googleClientSecret
+    ? {
+        google: {
+          clientId: googleClientId,
+          clientSecret: googleClientSecret,
+        },
+      }
+    : undefined;
 
 const trustedOrigins = [appUrl, process.env.BETTER_AUTH_URL].filter(
   (origin): origin is string => Boolean(origin),
@@ -47,6 +58,7 @@ export const auth = betterAuth({
     provider: "pg",
     schema,
   }),
+  socialProviders: googleSocialProviders,
   session: {
     modelName: "sessions",
     expiresIn: 60 * 60 * 24 * 30,

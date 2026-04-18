@@ -386,8 +386,8 @@ export async function getPortalDashboardData(): Promise<PortalDashboardData> {
       topCampaignTitle: topCampaign?.title ?? null,
       comparisonPercent: null,
     },
-    recentActivity: recentActivity
-      .toSorted((left, right) => right.time.getTime() - left.time.getTime())
+    recentActivity: [...recentActivity]
+      .sort((left, right) => right.time.getTime() - left.time.getTime())
       .slice(0, 4),
   };
 }
