@@ -32,6 +32,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { authClient } from "@/lib/auth/auth-client";
 import { cn } from "@/lib/utils";
 import {
   Sidebar as DashboardSidebar,
@@ -197,7 +198,11 @@ function SidebarNavUser({ user }: { user: SidebarUser }) {
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onSelect={() => router.push("/api/auth/sign-out")}
+              onSelect={() => {
+                void authClient.signOut().then(() => {
+                  router.replace("/login");
+                });
+              }}
             >
               <LogOut />
               Sign out
