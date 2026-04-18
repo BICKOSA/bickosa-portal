@@ -30,8 +30,20 @@ function formatSignedPercent(value: number | null): string {
   return `${value > 0 ? "+" : ""}${value}%`;
 }
 
-function formatRelativeTime(value: Date): string {
-  const diffMs = Date.now() - value.getTime();
+function coerceDate(value: Date | string): Date | null {
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function activityTimeKey(value: Date | string): string {
+  return coerceDate(value)?.toISOString() ?? String(value);
+}
+
+function formatRelativeTime(value: Date | string): string {
+  const date = coerceDate(value);
+  if (!date) return "Recently";
+
+  const diffMs = Date.now() - date.getTime();
   const absoluteDiffMs = Math.abs(diffMs);
   const minute = 60 * 1000;
   const hour = 60 * minute;
@@ -185,7 +197,7 @@ export default async function PortalDashboardPage() {
               {data.recentActivity.length > 0 ? (
                 data.recentActivity.map((item) => (
                   <ActivityItem
-                    key={`${item.type}:${item.time.toISOString()}:${item.text}`}
+                    key={`${item.type}:${activityTimeKey(item.time)}:${item.text}`}
                     icon={activityIcon(item.type)}
                     text={item.text}
                     time={formatRelativeTime(item.time)}

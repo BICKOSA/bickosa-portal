@@ -151,19 +151,19 @@ function SidebarNavUser({ user }: { user: SidebarUser }) {
               />
             }
           >
-              <Avatar
-                size="sm"
-                src={user.image}
-                name={memberName}
-                className="border-sidebar-accent"
-              />
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{memberName}</span>
-                <span className="truncate text-xs text-sidebar-foreground/60">
-                  {user.email ?? "Member"}
-                </span>
-              </div>
-              <EllipsisVertical className="ml-auto size-4 text-sidebar-foreground/60" />
+            <Avatar
+              size="sm"
+              src={user.image}
+              name={memberName}
+              className="border-sidebar-accent"
+            />
+            <div className="grid flex-1 text-left text-sm leading-tight">
+              <span className="truncate font-medium">{memberName}</span>
+              <span className="text-sidebar-foreground/60 truncate text-xs">
+                {user.email ?? "Member"}
+              </span>
+            </div>
+            <EllipsisVertical className="text-sidebar-foreground/60 ml-auto size-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="min-w-56 rounded-lg"
@@ -171,17 +171,19 @@ function SidebarNavUser({ user }: { user: SidebarUser }) {
             align="end"
             sideOffset={4}
           >
-            <DropdownMenuLabel className="p-0 font-normal">
-              <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                <Avatar size="sm" src={user.image} name={memberName} />
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{memberName}</span>
-                  <span className="truncate text-xs text-muted-foreground">
-                    {user.email ?? "Member"}
-                  </span>
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="p-0 font-normal">
+                <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                  <Avatar size="sm" src={user.image} name={memberName} />
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-medium">{memberName}</span>
+                    <span className="text-muted-foreground truncate text-xs">
+                      {user.email ?? "Member"}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            </DropdownMenuLabel>
+              </DropdownMenuLabel>
+            </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem onSelect={() => router.push("/profile")}>
@@ -194,7 +196,9 @@ function SidebarNavUser({ user }: { user: SidebarUser }) {
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => router.push("/api/auth/sign-out")}>
+            <DropdownMenuItem
+              onSelect={() => router.push("/api/auth/sign-out")}
+            >
               <LogOut />
               Sign out
             </DropdownMenuItem>
@@ -212,10 +216,14 @@ export function Sidebar({ user }: { user: SidebarUser }) {
 
   return (
     <DashboardSidebar variant="inset" collapsible="icon">
-      <SidebarHeader className="border-b border-sidebar-border px-2 py-3">
+      <SidebarHeader className="border-sidebar-border border-b px-2 py-3">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" tooltip="Dashboard" render={<Link href="/dashboard" />}>
+            <SidebarMenuButton
+              size="lg"
+              tooltip="Dashboard"
+              render={<Link href="/dashboard" />}
+            >
               <Image
                 src="/logo.png"
                 alt="BICKOSA"
@@ -225,10 +233,10 @@ export function Sidebar({ user }: { user: SidebarUser }) {
                 priority
               />
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold text-sidebar-foreground">
+                <span className="text-sidebar-foreground truncate font-semibold">
                   BICKOSA
                 </span>
-                <span className="truncate text-xs text-sidebar-foreground/60">
+                <span className="text-sidebar-foreground/60 truncate text-xs">
                   Alumni Portal
                 </span>
               </div>
@@ -240,7 +248,7 @@ export function Sidebar({ user }: { user: SidebarUser }) {
       <SidebarContent className="gap-1 px-2 py-3">
         {navGroups.map((group) => (
           <SidebarGroup key={group.label} className="p-0">
-            <SidebarGroupLabel className="px-2 text-[10px] tracking-[0.14em] uppercase text-sidebar-foreground/40">
+            <SidebarGroupLabel className="text-sidebar-foreground/40 px-2 text-[10px] tracking-[0.14em] uppercase">
               {group.label}
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -255,9 +263,9 @@ export function Sidebar({ user }: { user: SidebarUser }) {
                         tooltip={item.label}
                         render={<Link href={item.href} />}
                         className={cn(
-                          "h-9 text-[13px] text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                          "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground h-9 text-[13px]",
                           active &&
-                            "border-l-2 border-l-(--gold-500) bg-sidebar-accent text-sidebar-accent-foreground font-medium",
+                            "bg-sidebar-accent text-sidebar-accent-foreground border-l-2 border-l-(--gold-500) font-medium",
                         )}
                       >
                         <Icon className="size-4" />
@@ -285,7 +293,7 @@ export function Sidebar({ user }: { user: SidebarUser }) {
         ))}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border px-2 py-3">
+      <SidebarFooter className="border-sidebar-border border-t px-2 py-3">
         <SidebarNavUser user={user} />
         {isAdmin ? (
           <div className="px-2 pt-1 group-data-[collapsible=icon]:hidden">

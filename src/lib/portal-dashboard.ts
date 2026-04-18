@@ -18,7 +18,7 @@ export type PortalDashboardStat = {
 export type PortalDashboardActivity = {
   type: "event" | "members" | "mentorship" | "giving";
   text: string;
-  time: Date;
+  time: Date | string;
 };
 
 export type PortalDashboardData = {
@@ -93,6 +93,12 @@ function campaignProgressPercent(
     100,
     Math.round((Number(raisedAmount) / Number(goalAmount)) * 100),
   );
+}
+
+function dashboardTimeMs(value: Date | string): number {
+  const date = value instanceof Date ? value : new Date(value);
+  const time = date.getTime();
+  return Number.isNaN(time) ? 0 : time;
 }
 
 export async function getPortalDashboardData(): Promise<PortalDashboardData> {
@@ -387,7 +393,10 @@ export async function getPortalDashboardData(): Promise<PortalDashboardData> {
       comparisonPercent: null,
     },
     recentActivity: [...recentActivity]
-      .sort((left, right) => right.time.getTime() - left.time.getTime())
+      .sort(
+        (left, right) =>
+          dashboardTimeMs(right.time) - dashboardTimeMs(left.time),
+      )
       .slice(0, 4),
   };
 }
