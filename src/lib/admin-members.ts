@@ -1,14 +1,28 @@
-import { and, asc, desc, eq, ilike, inArray, sql, type SQL } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  ilike,
+  inArray,
+  or,
+  sql,
+  type SQL,
+} from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import {
   alumniProfiles,
+  alumniRegistrations,
   chapters,
   consentLogs,
   users,
   verificationEvents,
 } from "@/lib/db/schema";
-import { sendVerificationApprovedEmail, sendVerificationRejectedEmail } from "@/lib/email/resend";
+import {
+  sendVerificationApprovedEmail,
+  sendVerificationRejectedEmail,
+} from "@/lib/email/resend";
 import { createNotification } from "@/lib/notifications/create-notification";
 import { buildR2PublicUrl } from "@/lib/r2";
 
@@ -17,7 +31,11 @@ const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
 
 export type VerificationStatus = "pending" | "verified" | "rejected";
-export type VerificationAction = "submitted" | "approved" | "rejected" | "suspended";
+export type VerificationAction =
+  | "submitted"
+  | "approved"
+  | "rejected"
+  | "suspended";
 
 export type AdminMemberListStatus = VerificationStatus | "all";
 export type AdminMemberSortField =
@@ -83,6 +101,27 @@ export type AdminMemberConsentLog = {
   createdAt: Date;
 };
 
+export type AdminMemberJoinSubmission = {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string | null;
+  graduationYear: number;
+  stream: string | null;
+  house: string | null;
+  notableTeachers: string | null;
+  currentLocation: string | null;
+  occupation: string | null;
+  linkedinUrl: string | null;
+  howTheyHeard: string | null;
+  verificationStatus: "pending" | "verified" | "rejected" | "duplicate";
+  verificationNotes: string | null;
+  schoolRecordMatch: boolean | null;
+  submittedAt: Date;
+  reviewedAt: Date | null;
+  submissionIp: string | null;
+};
+
 export type AdminMemberProfileDetail = {
   profileId: string;
   userId: string;
@@ -100,6 +139,11 @@ export type AdminMemberProfileDetail = {
   chapterName: string | null;
   yearOfEntry: number | null;
   yearOfCompletion: number | null;
+  graduationYear: number | null;
+  stream: string | null;
+  house: string | null;
+  notableTeachers: string | null;
+  howTheyHeard: string | null;
   currentJobTitle: string | null;
   currentEmployer: string | null;
   industry: string | null;
@@ -111,6 +155,7 @@ export type AdminMemberProfileDetail = {
   websiteUrl: string | null;
   isAvailableForMentorship: boolean;
   joinedAt: Date;
+  originalJoinSubmission: AdminMemberJoinSubmission | null;
   verificationHistory: AdminMemberVerificationEvent[];
   consentLogs: AdminMemberConsentLog[];
 };
@@ -153,7 +198,9 @@ export function normalizeAdminMemberFilters(
 ): AdminMemberFilters {
   const statusParam = getParam(input, "status");
   const status: AdminMemberListStatus =
-    statusParam === "pending" || statusParam === "verified" || statusParam === "rejected"
+    statusParam === "pending" ||
+    statusParam === "verified" ||
+    statusParam === "rejected"
       ? statusParam
       : "all";
   const chapterId = (getParam(input, "chapter") ?? "").trim() || null;
@@ -172,8 +219,12 @@ export function normalizeAdminMemberFilters(
   const sortDirParam = getParam(input, "dir");
   const sortDir: AdminSortDirection = sortDirParam === "asc" ? "asc" : "desc";
 
-  const page = Math.max(DEFAULT_PAGE, toNumber(getParam(input, "page")) ?? DEFAULT_PAGE);
-  const requestedPageSize = toNumber(getParam(input, "pageSize")) ?? DEFAULT_PAGE_SIZE;
+  const page = Math.max(
+    DEFAULT_PAGE,
+    toNumber(getParam(input, "page")) ?? DEFAULT_PAGE,
+  );
+  const requestedPageSize =
+    toNumber(getParam(input, "pageSize")) ?? DEFAULT_PAGE_SIZE;
   const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, requestedPageSize));
 
   return {
@@ -226,25 +277,35 @@ function buildOrderBy(filters: AdminMemberFilters): SQL[] {
 
   switch (filters.sortBy) {
     case "classYear":
-      return [direction(alumniProfiles.yearOfCompletion), asc(alumniProfiles.lastName)];
+      return [
+        direction(alumniProfiles.yearOfCompletion),
+        asc(alumniProfiles.lastName),
+      ];
     case "email":
       return [direction(users.email), asc(alumniProfiles.lastName)];
     case "chapter":
       return [direction(chapters.name), asc(alumniProfiles.lastName)];
     case "status":
-      return [direction(alumniProfiles.verificationStatus), asc(alumniProfiles.lastName)];
+      return [
+        direction(alumniProfiles.verificationStatus),
+        asc(alumniProfiles.lastName),
+      ];
     case "joinedAt":
       return [direction(users.createdAt), asc(alumniProfiles.lastName)];
     case "name":
     default:
       return [
-        direction(sql`concat(${alumniProfiles.firstName}, ' ', ${alumniProfiles.lastName})`),
+        direction(
+          sql`concat(${alumniProfiles.firstName}, ' ', ${alumniProfiles.lastName})`,
+        ),
         asc(alumniProfiles.lastName),
       ];
   }
 }
 
-export async function listAdminMembers(filters: AdminMemberFilters): Promise<AdminMemberListResult> {
+export async function listAdminMembers(
+  filters: AdminMemberFilters,
+): Promise<AdminMemberListResult> {
   const where = buildWhereClause(filters);
   const [rows, totals] = await Promise.all([
     db
@@ -296,7 +357,9 @@ export async function listAdminMembers(filters: AdminMemberFilters): Promise<Adm
   };
 }
 
-export async function listAdminMemberChapterOptions(): Promise<AdminMemberChapterOption[]> {
+export async function listAdminMemberChapterOptions(): Promise<
+  AdminMemberChapterOption[]
+> {
   return db
     .select({
       id: chapters.id,
@@ -327,6 +390,11 @@ export async function getAdminMemberProfileDetail(
       chapterName: chapters.name,
       yearOfEntry: alumniProfiles.yearOfEntry,
       yearOfCompletion: alumniProfiles.yearOfCompletion,
+      graduationYear: alumniProfiles.graduationYear,
+      stream: alumniProfiles.stream,
+      house: alumniProfiles.house,
+      notableTeachers: alumniProfiles.notableTeachers,
+      howTheyHeard: alumniProfiles.howTheyHeard,
       currentJobTitle: alumniProfiles.currentJobTitle,
       currentEmployer: alumniProfiles.currentEmployer,
       industry: alumniProfiles.industry,
@@ -350,33 +418,65 @@ export async function getAdminMemberProfileDetail(
     return null;
   }
 
-  const [verificationHistory, consentHistory] = await Promise.all([
-    db
-      .select({
-        id: verificationEvents.id,
-        action: verificationEvents.action,
-        notes: verificationEvents.notes,
-        createdAt: verificationEvents.createdAt,
-        actorName: users.name,
-        actorEmail: users.email,
-      })
-      .from(verificationEvents)
-      .innerJoin(users, eq(users.id, verificationEvents.actorId))
-      .where(eq(verificationEvents.alumniProfileId, profileId))
-      .orderBy(desc(verificationEvents.createdAt)),
-    db
-      .select({
-        id: consentLogs.id,
-        consentType: consentLogs.consentType,
-        granted: consentLogs.granted,
-        ipAddress: consentLogs.ipAddress,
-        userAgent: consentLogs.userAgent,
-        createdAt: consentLogs.createdAt,
-      })
-      .from(consentLogs)
-      .where(eq(consentLogs.userId, profile.userId))
-      .orderBy(desc(consentLogs.createdAt)),
-  ]);
+  const [verificationHistory, consentHistory, originalJoinSubmission] =
+    await Promise.all([
+      db
+        .select({
+          id: verificationEvents.id,
+          action: verificationEvents.action,
+          notes: verificationEvents.notes,
+          createdAt: verificationEvents.createdAt,
+          actorName: users.name,
+          actorEmail: users.email,
+        })
+        .from(verificationEvents)
+        .innerJoin(users, eq(users.id, verificationEvents.actorId))
+        .where(eq(verificationEvents.alumniProfileId, profileId))
+        .orderBy(desc(verificationEvents.createdAt)),
+      db
+        .select({
+          id: consentLogs.id,
+          consentType: consentLogs.consentType,
+          granted: consentLogs.granted,
+          ipAddress: consentLogs.ipAddress,
+          userAgent: consentLogs.userAgent,
+          createdAt: consentLogs.createdAt,
+        })
+        .from(consentLogs)
+        .where(eq(consentLogs.userId, profile.userId))
+        .orderBy(desc(consentLogs.createdAt)),
+      db
+        .select({
+          id: alumniRegistrations.id,
+          fullName: alumniRegistrations.fullName,
+          email: alumniRegistrations.email,
+          phone: alumniRegistrations.phone,
+          graduationYear: alumniRegistrations.graduationYear,
+          stream: alumniRegistrations.stream,
+          house: alumniRegistrations.house,
+          notableTeachers: alumniRegistrations.notableTeachers,
+          currentLocation: alumniRegistrations.currentLocation,
+          occupation: alumniRegistrations.occupation,
+          linkedinUrl: alumniRegistrations.linkedinUrl,
+          howTheyHeard: alumniRegistrations.howTheyHeard,
+          verificationStatus: alumniRegistrations.verificationStatus,
+          verificationNotes: alumniRegistrations.verificationNotes,
+          schoolRecordMatch: alumniRegistrations.schoolRecordMatch,
+          submittedAt: alumniRegistrations.createdAt,
+          reviewedAt: alumniRegistrations.reviewedAt,
+          submissionIp: alumniRegistrations.submissionIp,
+        })
+        .from(alumniRegistrations)
+        .where(
+          or(
+            eq(alumniRegistrations.convertedToUserId, profile.userId),
+            eq(alumniRegistrations.email, profile.email),
+          ),
+        )
+        .orderBy(desc(alumniRegistrations.createdAt))
+        .limit(1)
+        .then((rows) => rows[0] ?? null),
+    ]);
 
   return {
     profileId: profile.profileId,
@@ -395,6 +495,11 @@ export async function getAdminMemberProfileDetail(
     chapterName: profile.chapterName,
     yearOfEntry: profile.yearOfEntry,
     yearOfCompletion: profile.yearOfCompletion,
+    graduationYear: profile.graduationYear,
+    stream: profile.stream,
+    house: profile.house,
+    notableTeachers: profile.notableTeachers,
+    howTheyHeard: profile.howTheyHeard,
     currentJobTitle: profile.currentJobTitle,
     currentEmployer: profile.currentEmployer,
     industry: profile.industry,
@@ -406,12 +511,15 @@ export async function getAdminMemberProfileDetail(
     websiteUrl: profile.websiteUrl,
     isAvailableForMentorship: profile.isAvailableForMentorship,
     joinedAt: profile.joinedAt,
+    originalJoinSubmission,
     verificationHistory,
     consentLogs: consentHistory,
   };
 }
 
-async function resolveChapterIdByCountry(country: string | null): Promise<string | null> {
+async function resolveChapterIdByCountry(
+  country: string | null,
+): Promise<string | null> {
   if (!country) {
     return null;
   }
@@ -424,7 +532,12 @@ async function resolveChapterIdByCountry(country: string | null): Promise<string
   const exactMatch = await db
     .select({ id: chapters.id })
     .from(chapters)
-    .where(and(eq(chapters.isActive, true), ilike(chapters.country, normalizedCountry)))
+    .where(
+      and(
+        eq(chapters.isActive, true),
+        ilike(chapters.country, normalizedCountry),
+      ),
+    )
     .orderBy(desc(chapters.memberCount), asc(chapters.name))
     .limit(1)
     .then((rows) => rows[0] ?? null);
@@ -437,7 +550,9 @@ function normalizeNotes(value: string | null | undefined): string | null {
   return trimmed ? trimmed : null;
 }
 
-export async function verifyMemberProfileAction(input: VerifyMemberActionInput): Promise<{
+export async function verifyMemberProfileAction(
+  input: VerifyMemberActionInput,
+): Promise<{
   profileId: string;
   status: VerificationStatus;
 }> {
@@ -474,7 +589,9 @@ export async function verifyMemberProfileAction(input: VerifyMemberActionInput):
   if (input.action === "approve") {
     const selectedChapterId = input.chapterId ?? null;
     assignedChapterId =
-      selectedChapterId || (await resolveChapterIdByCountry(profile.locationCountry)) || profile.chapterId;
+      selectedChapterId ||
+      (await resolveChapterIdByCountry(profile.locationCountry)) ||
+      profile.chapterId;
     nextStatus = "verified";
   } else if (input.action === "reject") {
     nextStatus = "rejected";
@@ -510,7 +627,8 @@ export async function verifyMemberProfileAction(input: VerifyMemberActionInput):
         verificationStatus: nextStatus,
         verifiedAt: input.action === "approve" ? now : null,
         verifiedById: input.adminUserId,
-        chapterId: input.action === "approve" ? assignedChapterId : profile.chapterId,
+        chapterId:
+          input.action === "approve" ? assignedChapterId : profile.chapterId,
         updatedAt: now,
       })
       .where(eq(alumniProfiles.id, input.profileId));
@@ -519,7 +637,11 @@ export async function verifyMemberProfileAction(input: VerifyMemberActionInput):
       alumniProfileId: input.profileId,
       actorId: input.adminUserId,
       action:
-        input.action === "approve" ? "approved" : input.action === "reject" ? "rejected" : "suspended",
+        input.action === "approve"
+          ? "approved"
+          : input.action === "reject"
+            ? "rejected"
+            : "suspended",
       notes,
       createdAt: now,
     });

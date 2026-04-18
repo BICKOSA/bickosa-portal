@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { ReactNode } from "react";
 
 import { MemberVerificationActions } from "@/app/(portal)/portal/admin/members/_components/member-verification-actions";
 import { Avatar } from "@/components/ui/avatar";
@@ -15,7 +16,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { requireAdminPageSession } from "@/lib/admin-auth";
-import { getAdminMemberProfileDetail, listAdminMemberChapterOptions } from "@/lib/admin-members";
+import {
+  getAdminMemberProfileDetail,
+  listAdminMemberChapterOptions,
+} from "@/lib/admin-members";
 
 type AdminMemberDetailsPageProps = {
   params: Promise<{ id: string }>;
@@ -41,7 +45,25 @@ function renderStatus(status: "pending" | "verified" | "rejected") {
   return <Badge variant="warning">Pending</Badge>;
 }
 
-export default async function AdminMemberDetailsPage({ params }: AdminMemberDetailsPageProps) {
+function DetailItem({
+  label,
+  value,
+  className,
+}: {
+  label: string;
+  value: ReactNode;
+  className?: string;
+}) {
+  return (
+    <p className={`text-sm text-[var(--text-2)] ${className ?? ""}`}>
+      {label}: <strong>{value ?? "—"}</strong>
+    </p>
+  );
+}
+
+export default async function AdminMemberDetailsPage({
+  params,
+}: AdminMemberDetailsPageProps) {
   await requireAdminPageSession();
   const { id } = await params;
 
@@ -60,7 +82,7 @@ export default async function AdminMemberDetailsPage({ params }: AdminMemberDeta
         <div className="flex items-center gap-3">
           <Avatar size="lg" src={member.avatarUrl} name={member.fullName} />
           <div>
-            <h2 className="font-[var(--font-ui)] text-2xl font-semibold text-[var(--navy-900)]">
+            <h2 className="text-2xl font-[var(--font-ui)] font-semibold text-[var(--navy-900)]">
               {member.fullName}
             </h2>
             <p className="text-sm text-[var(--text-3)]">{member.email}</p>
@@ -79,52 +101,186 @@ export default async function AdminMemberDetailsPage({ params }: AdminMemberDeta
               <CardTitle>Profile Summary</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-3 sm:grid-cols-2">
-              <p className="text-sm text-[var(--text-2)]">First Name: <strong>{member.firstName}</strong></p>
-              <p className="text-sm text-[var(--text-2)]">Last Name: <strong>{member.lastName}</strong></p>
-              <p className="text-sm text-[var(--text-2)]">Email: <strong>{member.email}</strong></p>
-              <p className="text-sm text-[var(--text-2)]">Status: <strong>{member.status}</strong></p>
-              <p className="text-sm text-[var(--text-2)]">
-                Year of Entry: <strong>{member.yearOfEntry ?? "—"}</strong>
-              </p>
-              <p className="text-sm text-[var(--text-2)]">
-                Year of Completion: <strong>{member.yearOfCompletion ?? "—"}</strong>
-              </p>
-              <p className="text-sm text-[var(--text-2)]">
-                Current Job Title: <strong>{member.currentJobTitle ?? "—"}</strong>
-              </p>
-              <p className="text-sm text-[var(--text-2)]">
-                Current Employer: <strong>{member.currentEmployer ?? "—"}</strong>
-              </p>
-              <p className="text-sm text-[var(--text-2)]">Industry: <strong>{member.industry ?? "—"}</strong></p>
-              <p className="text-sm text-[var(--text-2)]">Phone: <strong>{member.phone ?? "—"}</strong></p>
-              <p className="text-sm text-[var(--text-2)]">
-                Location: <strong>{member.locationCity ?? "—"}{member.locationCountry ? `, ${member.locationCountry}` : ""}</strong>
-              </p>
-              <p className="text-sm text-[var(--text-2)]">Chapter: <strong>{member.chapterName ?? "Unassigned"}</strong></p>
-              <p className="text-sm text-[var(--text-2)]">
-                Membership Tier: <strong>{member.membershipTier}</strong>
-              </p>
-              <p className="text-sm text-[var(--text-2)]">
-                Membership Expires:{" "}
-                <strong>{member.membershipExpiresAt ? DATE_FORMATTER.format(member.membershipExpiresAt) : "—"}</strong>
-              </p>
-              <p className="text-sm text-[var(--text-2)]">
-                Verified At: <strong>{member.verifiedAt ? DATE_TIME_FORMATTER.format(member.verifiedAt) : "—"}</strong>
-              </p>
-              <p className="text-sm text-[var(--text-2)]">
-                Joined: <strong>{DATE_TIME_FORMATTER.format(member.joinedAt)}</strong>
-              </p>
-              <p className="text-sm text-[var(--text-2)] sm:col-span-2">
-                LinkedIn: <strong>{member.linkedinUrl ?? "—"}</strong>
-              </p>
-              <p className="text-sm text-[var(--text-2)] sm:col-span-2">
-                Website: <strong>{member.websiteUrl ?? "—"}</strong>
-              </p>
-              <p className="text-sm text-[var(--text-2)] sm:col-span-2">
-                Bio: <strong>{member.bio ?? "—"}</strong>
-              </p>
+              <DetailItem label="First Name" value={member.firstName} />
+              <DetailItem label="Last Name" value={member.lastName} />
+              <DetailItem label="Email" value={member.email} />
+              <DetailItem label="Status" value={member.status} />
+              <DetailItem
+                label="Year of Entry"
+                value={member.yearOfEntry ?? "—"}
+              />
+              <DetailItem
+                label="Year of Completion"
+                value={member.yearOfCompletion ?? "—"}
+              />
+              <DetailItem
+                label="Graduation Year Submitted"
+                value={member.graduationYear ?? "—"}
+              />
+              <DetailItem label="Stream" value={member.stream ?? "—"} />
+              <DetailItem label="House" value={member.house ?? "—"} />
+              <DetailItem
+                label="Notable Teachers"
+                value={member.notableTeachers ?? "—"}
+              />
+              <DetailItem
+                label="Current Job Title"
+                value={member.currentJobTitle ?? "—"}
+              />
+              <DetailItem
+                label="Current Employer"
+                value={member.currentEmployer ?? "—"}
+              />
+              <DetailItem label="Industry" value={member.industry ?? "—"} />
+              <DetailItem label="Phone" value={member.phone ?? "—"} />
+              <DetailItem
+                label="Location"
+                value={`${member.locationCity ?? "—"}${member.locationCountry ? `, ${member.locationCountry}` : ""}`}
+              />
+              <DetailItem
+                label="How They Heard"
+                value={member.howTheyHeard ?? "—"}
+              />
+              <DetailItem
+                label="Chapter"
+                value={member.chapterName ?? "Unassigned"}
+              />
+              <DetailItem
+                label="Membership Tier"
+                value={member.membershipTier}
+              />
+              <DetailItem
+                label="Membership Expires"
+                value={
+                  member.membershipExpiresAt
+                    ? DATE_FORMATTER.format(member.membershipExpiresAt)
+                    : "—"
+                }
+              />
+              <DetailItem
+                label="Verified At"
+                value={
+                  member.verifiedAt
+                    ? DATE_TIME_FORMATTER.format(member.verifiedAt)
+                    : "—"
+                }
+              />
+              <DetailItem
+                label="Joined"
+                value={DATE_TIME_FORMATTER.format(member.joinedAt)}
+              />
+              <DetailItem
+                label="LinkedIn"
+                value={member.linkedinUrl ?? "—"}
+                className="sm:col-span-2"
+              />
+              <DetailItem
+                label="Website"
+                value={member.websiteUrl ?? "—"}
+                className="sm:col-span-2"
+              />
+              <DetailItem
+                label="Bio"
+                value={member.bio ?? "—"}
+                className="sm:col-span-2"
+              />
             </CardContent>
           </Card>
+
+          {member.originalJoinSubmission ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Original Join Submission</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-3 sm:grid-cols-2">
+                <DetailItem
+                  label="Submitted Name"
+                  value={member.originalJoinSubmission.fullName}
+                />
+                <DetailItem
+                  label="Submitted Email"
+                  value={member.originalJoinSubmission.email}
+                />
+                <DetailItem
+                  label="Submitted Phone"
+                  value={member.originalJoinSubmission.phone ?? "—"}
+                />
+                <DetailItem
+                  label="Submitted Graduation Year"
+                  value={member.originalJoinSubmission.graduationYear}
+                />
+                <DetailItem
+                  label="Stream"
+                  value={member.originalJoinSubmission.stream ?? "—"}
+                />
+                <DetailItem
+                  label="House"
+                  value={member.originalJoinSubmission.house ?? "—"}
+                />
+                <DetailItem
+                  label="Current Location"
+                  value={member.originalJoinSubmission.currentLocation ?? "—"}
+                />
+                <DetailItem
+                  label="Occupation"
+                  value={member.originalJoinSubmission.occupation ?? "—"}
+                />
+                <DetailItem
+                  label="LinkedIn"
+                  value={member.originalJoinSubmission.linkedinUrl ?? "—"}
+                />
+                <DetailItem
+                  label="How They Heard"
+                  value={member.originalJoinSubmission.howTheyHeard ?? "—"}
+                />
+                <DetailItem
+                  label="School Record Match"
+                  value={
+                    member.originalJoinSubmission.schoolRecordMatch === null
+                      ? "—"
+                      : member.originalJoinSubmission.schoolRecordMatch
+                        ? "Yes"
+                        : "No"
+                  }
+                />
+                <DetailItem
+                  label="Submission Status"
+                  value={member.originalJoinSubmission.verificationStatus}
+                />
+                <DetailItem
+                  label="Submitted At"
+                  value={DATE_TIME_FORMATTER.format(
+                    member.originalJoinSubmission.submittedAt,
+                  )}
+                />
+                <DetailItem
+                  label="Reviewed At"
+                  value={
+                    member.originalJoinSubmission.reviewedAt
+                      ? DATE_TIME_FORMATTER.format(
+                          member.originalJoinSubmission.reviewedAt,
+                        )
+                      : "—"
+                  }
+                />
+                <DetailItem
+                  label="Notable Teachers / Memory Prompt"
+                  value={member.originalJoinSubmission.notableTeachers ?? "—"}
+                  className="sm:col-span-2"
+                />
+                <DetailItem
+                  label="Verification Notes"
+                  value={member.originalJoinSubmission.verificationNotes ?? "—"}
+                  className="sm:col-span-2"
+                />
+                <DetailItem
+                  label="Submission IP"
+                  value={member.originalJoinSubmission.submissionIp ?? "—"}
+                  className="sm:col-span-2"
+                />
+              </CardContent>
+            </Card>
+          ) : null}
 
           <Card>
             <CardHeader>
@@ -132,11 +288,16 @@ export default async function AdminMemberDetailsPage({ params }: AdminMemberDeta
             </CardHeader>
             <CardContent>
               {member.verificationHistory.length === 0 ? (
-                <p className="text-sm text-[var(--text-3)]">No verification events yet.</p>
+                <p className="text-sm text-[var(--text-3)]">
+                  No verification events yet.
+                </p>
               ) : (
                 <div className="space-y-3">
                   {member.verificationHistory.map((event) => (
-                    <div key={event.id} className="rounded-[var(--r-md)] border border-[var(--border)] p-3">
+                    <div
+                      key={event.id}
+                      className="rounded-[var(--r-md)] border border-[var(--border)] p-3"
+                    >
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
                           <Badge variant="outline">{event.action}</Badge>
@@ -148,7 +309,11 @@ export default async function AdminMemberDetailsPage({ params }: AdminMemberDeta
                           {DATE_TIME_FORMATTER.format(event.createdAt)}
                         </p>
                       </div>
-                      {event.notes ? <p className="mt-2 text-sm text-[var(--text-2)]">{event.notes}</p> : null}
+                      {event.notes ? (
+                        <p className="mt-2 text-sm text-[var(--text-2)]">
+                          {event.notes}
+                        </p>
+                      ) : null}
                     </div>
                   ))}
                 </div>
@@ -163,7 +328,10 @@ export default async function AdminMemberDetailsPage({ params }: AdminMemberDeta
               <CardTitle>Verification Actions</CardTitle>
             </CardHeader>
             <CardContent>
-              <MemberVerificationActions profileId={member.profileId} chapterOptions={chapterOptions} />
+              <MemberVerificationActions
+                profileId={member.profileId}
+                chapterOptions={chapterOptions}
+              />
             </CardContent>
           </Card>
 
@@ -173,7 +341,9 @@ export default async function AdminMemberDetailsPage({ params }: AdminMemberDeta
             </CardHeader>
             <CardContent>
               {member.consentLogs.length === 0 ? (
-                <p className="text-sm text-[var(--text-3)]">No consent records found.</p>
+                <p className="text-sm text-[var(--text-3)]">
+                  No consent records found.
+                </p>
               ) : (
                 <Table>
                   <TableHeader>
@@ -188,9 +358,15 @@ export default async function AdminMemberDetailsPage({ params }: AdminMemberDeta
                       <TableRow key={log.id}>
                         <TableCell>{log.consentType}</TableCell>
                         <TableCell>
-                          {log.granted ? <Badge variant="success">Yes</Badge> : <Badge variant="outline">No</Badge>}
+                          {log.granted ? (
+                            <Badge variant="success">Yes</Badge>
+                          ) : (
+                            <Badge variant="outline">No</Badge>
+                          )}
                         </TableCell>
-                        <TableCell>{DATE_TIME_FORMATTER.format(log.createdAt)}</TableCell>
+                        <TableCell>
+                          {DATE_TIME_FORMATTER.format(log.createdAt)}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

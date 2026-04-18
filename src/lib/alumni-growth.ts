@@ -380,6 +380,10 @@ export async function verifyRegistrationAndCreateAccount(input: {
         lastName: names.lastName,
         graduationYear: registration.graduationYear,
         yearOfCompletion: registration.graduationYear,
+        stream: registration.stream,
+        house: registration.house,
+        notableTeachers: registration.notableTeachers,
+        howTheyHeard: registration.howTheyHeard,
         phone: registration.phone,
         locationCity: registration.currentLocation,
         currentJobTitle: registration.occupation,
@@ -396,6 +400,10 @@ export async function verifyRegistrationAndCreateAccount(input: {
           lastName: names.lastName,
           graduationYear: registration.graduationYear,
           yearOfCompletion: registration.graduationYear,
+          stream: registration.stream,
+          house: registration.house,
+          notableTeachers: registration.notableTeachers,
+          howTheyHeard: registration.howTheyHeard,
           phone: registration.phone,
           locationCity: registration.currentLocation,
           currentJobTitle: registration.occupation,
@@ -465,7 +473,9 @@ export async function verifyRegistrationsBulk(input: {
       failures.push({
         registrationId,
         message:
-          error instanceof Error ? error.message : "Failed to verify registration.",
+          error instanceof Error
+            ? error.message
+            : "Failed to verify registration.",
       });
     }
   }
