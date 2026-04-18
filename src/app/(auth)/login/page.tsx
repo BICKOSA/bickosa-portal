@@ -21,6 +21,7 @@ const loginSchema = z.object({
 });
 
 type LoginValues = z.infer<typeof loginSchema>;
+type SocialProvider = "google" | "linkedin";
 
 function GoogleLogo() {
   return (
@@ -50,6 +51,22 @@ function GoogleLogo() {
   );
 }
 
+function LinkedInLogo() {
+  return (
+    <svg
+      className="size-4"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path
+        fill="#0A66C2"
+        d="M20.45 20.45h-3.56v-5.58c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.68H9.34V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.32 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12Zm1.78 13.02H3.54V9H7.1v11.45ZM22.23 0H1.77C.8 0 0 .77 0 1.73v20.54C0 23.23.8 24 1.77 24h20.46c.98 0 1.77-.77 1.77-1.73V1.73C24 .77 23.21 0 22.23 0Z"
+      />
+    </svg>
+  );
+}
+
 function normalizeReturnTo(returnTo: string | null): string {
   if (!returnTo || !returnTo.startsWith("/") || returnTo.startsWith("//")) {
     return "/dashboard";
@@ -63,7 +80,7 @@ function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [formError, setFormError] = useState<string | null>(null);
-  const [isGoogleBusy, setGoogleBusy] = useState(false);
+  const [busyProvider, setBusyProvider] = useState<SocialProvider | null>(null);
   const oauthError = searchParams.get("error");
 
   const {
@@ -115,32 +132,36 @@ function LoginPageContent() {
     router.push(returnTo);
   };
 
-  const handleGoogleSignIn = async () => {
+  const handleSocialSignIn = async (provider: SocialProvider) => {
     setFormError(null);
-    setGoogleBusy(true);
+    setBusyProvider(provider);
 
     const returnTo = normalizeReturnTo(searchParams.get("returnTo"));
 
     await trackPortalEventClient({
       event: "user_login",
       properties: {
-        method: "google",
+        method: provider,
       },
     }).catch(() => undefined);
 
     const result = await authClient.signIn.social({
-      provider: "google",
+      provider,
       callbackURL: returnTo,
-      errorCallbackURL: `/login?returnTo=${encodeURIComponent(returnTo)}&error=google`,
+      errorCallbackURL: `/login?returnTo=${encodeURIComponent(returnTo)}&error=${provider}`,
     });
 
     if (result.error) {
       setFormError(
-        result.error.message ?? "Google sign-in could not be started.",
+        result.error.message ?? "Social sign-in could not be started.",
       );
-      setGoogleBusy(false);
+      setBusyProvider(null);
     }
   };
+
+  const isGoogleBusy = busyProvider === "google";
+  const isLinkedInBusy = busyProvider === "linkedin";
+  const isSocialBusy = busyProvider !== null;
 
   return (
     <AuthPageShell variant="immersive">
@@ -156,11 +177,23 @@ function LoginPageContent() {
           variant="outline"
           className="h-12 w-full border-[var(--border-2)] bg-[var(--white)] text-[var(--navy-900)] shadow-[var(--shadow-sm)] hover:border-[var(--navy-200)] hover:bg-[var(--navy-50)]"
           isLoading={isGoogleBusy}
-          disabled={isSubmitting}
-          onClick={() => void handleGoogleSignIn()}
+          disabled={isSubmitting || isSocialBusy}
+          onClick={() => void handleSocialSignIn("google")}
         >
           {!isGoogleBusy ? <GoogleLogo /> : null}
           Continue with Google
+        </Button>
+
+        <Button
+          type="button"
+          variant="outline"
+          className="h-12 w-full border-[var(--border-2)] bg-[var(--white)] text-[var(--navy-900)] shadow-[var(--shadow-sm)] hover:border-[var(--navy-200)] hover:bg-[var(--navy-50)]"
+          isLoading={isLinkedInBusy}
+          disabled={isSubmitting || isSocialBusy}
+          onClick={() => void handleSocialSignIn("linkedin")}
+        >
+          {!isLinkedInBusy ? <LinkedInLogo /> : null}
+          Continue with LinkedIn
         </Button>
 
         <div className="flex items-center gap-3 text-xs font-medium tracking-[0.16em] text-[var(--text-3)] uppercase">
@@ -210,7 +243,7 @@ function LoginPageContent() {
           ) : null}
           {!formError && oauthError ? (
             <p className="text-sm text-[var(--error)]">
-              Google sign-in could not be completed. Please try again.
+              Social sign-in could not be completed. Please try again.
             </p>
           ) : null}
 
