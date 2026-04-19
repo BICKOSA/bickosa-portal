@@ -309,7 +309,6 @@ export async function submitPeerNomination(
       reason: parsed.data.reason,
       status: "pending",
       createdAt: now,
-      confirmationSentAt: now,
     })
     .onConflictDoNothing({
       target: [
@@ -326,15 +325,33 @@ export async function submitPeerNomination(
     };
   }
 
-  await sendNominationRequestEmail({
-    nominationId: row.id,
-    committeeId: committee.id,
-    committeeName: committee.name,
-    committeePurpose: committee.purpose,
-    nomineeEmail: nominee.email,
-    nomineeName: nominee.name,
-    nominatedByName: nominator?.name ?? "A fellow member",
-  });
+  try {
+    await sendNominationRequestEmail({
+      nominationId: row.id,
+      committeeId: committee.id,
+      committeeName: committee.name,
+      committeePurpose: committee.purpose,
+      nomineeEmail: nominee.email,
+      nomineeName: nominee.name,
+      nominatedByName: nominator?.name ?? "A fellow member",
+    });
+    await db
+      .update(committeeNominations)
+      .set({ confirmationSentAt: new Date() })
+      .where(eq(committeeNominations.id, row.id));
+  } catch (error) {
+    console.error("Failed to send committee nomination request email", error);
+
+    revalidatePath(`/committees/${committee.id}`);
+    revalidatePath("/committees");
+    revalidatePath(`/admin/committees/${committee.id}/nominations`);
+
+    return {
+      ok: true,
+      message:
+        "Nomination submitted, but the email notification could not be sent automatically.",
+    };
+  }
 
   revalidatePath(`/committees/${committee.id}`);
   revalidatePath("/committees");

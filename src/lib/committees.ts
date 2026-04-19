@@ -1,4 +1,15 @@
-import { and, asc, count, desc, eq, ilike, inArray, ne, or, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  ilike,
+  inArray,
+  ne,
+  or,
+  sql,
+} from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import {
@@ -17,13 +28,32 @@ export type CommitteeWithCounts = {
   maxMembers: number | null;
   nominationOpens: Date;
   nominationCloses: Date;
-  status: "draft" | "nominations_open" | "nominations_closed" | "active" | "dissolved";
+  status:
+    | "draft"
+    | "nominations_open"
+    | "nominations_closed"
+    | "active"
+    | "dissolved";
   createdAt: Date;
   nominationCount: number;
   confirmedCount: number;
+  latestNominations: PublicCommitteeNomination[];
 };
 
-export async function getUserVerifiedMemberState(userId: string, emailVerified?: boolean): Promise<boolean> {
+export type PublicCommitteeNomination = {
+  nominationId: string;
+  nomineeId: string;
+  reason: string | null;
+  status: "pending" | "confirmed_willing" | "appointed";
+  createdAt: Date;
+  nomineeName: string;
+  nomineeYear: number | null;
+};
+
+export async function getUserVerifiedMemberState(
+  userId: string,
+  emailVerified?: boolean,
+): Promise<boolean> {
   if (emailVerified) {
     return true;
   }
@@ -54,7 +84,10 @@ export async function listCommitteesForHub(): Promise<{
       confirmedCount: sql<number>`count(*) filter (where ${committeeNominations.status} in ('confirmed_willing', 'appointed'))::int`,
     })
     .from(committees)
-    .leftJoin(committeeNominations, eq(committeeNominations.committeeId, committees.id))
+    .leftJoin(
+      committeeNominations,
+      eq(committeeNominations.committeeId, committees.id),
+    )
     .groupBy(
       committees.id,
       committees.name,
@@ -67,10 +100,69 @@ export async function listCommitteesForHub(): Promise<{
     )
     .orderBy(desc(committees.nominationOpens), desc(committees.createdAt));
 
-  const current = rows.filter(
-    (committee) => committee.status === "active" || committee.status === "nominations_open",
+  const committeeIds = rows.map((committee) => committee.id);
+  const nominationRows =
+    committeeIds.length > 0
+      ? await db
+          .select({
+            committeeId: committeeNominations.committeeId,
+            nominationId: committeeNominations.id,
+            nomineeId: committeeNominations.nomineeId,
+            reason: committeeNominations.reason,
+            status: committeeNominations.status,
+            createdAt: committeeNominations.createdAt,
+            nomineeName: users.name,
+            nomineeYear: alumniProfiles.yearOfCompletion,
+          })
+          .from(committeeNominations)
+          .innerJoin(users, eq(users.id, committeeNominations.nomineeId))
+          .leftJoin(
+            alumniProfiles,
+            eq(alumniProfiles.userId, committeeNominations.nomineeId),
+          )
+          .where(
+            and(
+              inArray(committeeNominations.committeeId, committeeIds),
+              inArray(committeeNominations.status, [
+                "pending",
+                "confirmed_willing",
+                "appointed",
+              ]),
+            ),
+          )
+          .orderBy(desc(committeeNominations.createdAt))
+      : [];
+
+  const nominationsByCommitteeId = new Map<
+    string,
+    PublicCommitteeNomination[]
+  >();
+  for (const nomination of nominationRows) {
+    const current = nominationsByCommitteeId.get(nomination.committeeId) ?? [];
+    if (current.length < 3) {
+      current.push({
+        nominationId: nomination.nominationId,
+        nomineeId: nomination.nomineeId,
+        reason: nomination.reason,
+        status: nomination.status as PublicCommitteeNomination["status"],
+        createdAt: nomination.createdAt,
+        nomineeName: nomination.nomineeName,
+        nomineeYear: nomination.nomineeYear,
+      });
+      nominationsByCommitteeId.set(nomination.committeeId, current);
+    }
+  }
+
+  const committeesWithNominations = rows.map((committee) => ({
+    ...committee,
+    latestNominations: nominationsByCommitteeId.get(committee.id) ?? [],
+  }));
+
+  const current = committeesWithNominations.filter(
+    (committee) =>
+      committee.status === "active" || committee.status === "nominations_open",
   );
-  const previous = rows.filter(
+  const previous = committeesWithNominations.filter(
     (committee) =>
       committee.status === "nominations_closed" ||
       committee.status === "dissolved" ||
@@ -88,7 +180,7 @@ export async function getCommitteeDetail(committeeId: string) {
     return null;
   }
 
-  const [approvedNominations, memberCountRow] = await Promise.all([
+  const [communityNominations, memberCountRow] = await Promise.all([
     db
       .select({
         nominationId: committeeNominations.id,
@@ -105,7 +197,11 @@ export async function getCommitteeDetail(committeeId: string) {
       .where(
         and(
           eq(committeeNominations.committeeId, committeeId),
-          inArray(committeeNominations.status, ["confirmed_willing", "appointed"]),
+          inArray(committeeNominations.status, [
+            "pending",
+            "confirmed_willing",
+            "appointed",
+          ]),
         ),
       )
       .orderBy(desc(committeeNominations.createdAt)),
@@ -117,7 +213,10 @@ export async function getCommitteeDetail(committeeId: string) {
 
   return {
     committee,
-    approvedNominations,
+    communityNominations: communityNominations.map((nomination) => ({
+      ...nomination,
+      status: nomination.status as PublicCommitteeNomination["status"],
+    })),
     memberCount: memberCountRow[0]?.value ?? 0,
   };
 }
@@ -167,7 +266,10 @@ export async function listAdminCommittees() {
       appointedCount: sql<number>`count(*) filter (where ${committeeNominations.status} = 'appointed')::int`,
     })
     .from(committees)
-    .leftJoin(committeeNominations, eq(committeeNominations.committeeId, committees.id))
+    .leftJoin(
+      committeeNominations,
+      eq(committeeNominations.committeeId, committees.id),
+    )
     .groupBy(
       committees.id,
       committees.name,
@@ -208,11 +310,16 @@ export async function listCommitteeNominationsForAdmin(params: {
     })
     .from(committeeNominations)
     .innerJoin(users, eq(users.id, committeeNominations.nomineeId))
-    .leftJoin(alumniProfiles, eq(alumniProfiles.userId, committeeNominations.nomineeId))
+    .leftJoin(
+      alumniProfiles,
+      eq(alumniProfiles.userId, committeeNominations.nomineeId),
+    )
     .where(whereClause)
     .orderBy(desc(committeeNominations.createdAt));
 
-  const nominatorIds = Array.from(new Set(rows.map((row) => row.nominatedById)));
+  const nominatorIds = Array.from(
+    new Set(rows.map((row) => row.nominatedById)),
+  );
   const nominators =
     nominatorIds.length > 0
       ? await db
@@ -220,7 +327,9 @@ export async function listCommitteeNominationsForAdmin(params: {
           .from(users)
           .where(inArray(users.id, nominatorIds))
       : [];
-  const nominatorNameById = new Map(nominators.map((nominator) => [nominator.id, nominator.name]));
+  const nominatorNameById = new Map(
+    nominators.map((nominator) => [nominator.id, nominator.name]),
+  );
 
   return rows.map((row) => ({
     ...row,
@@ -256,11 +365,16 @@ export async function logCommitteeNominationStatusChange(input: {
   });
 }
 
-export async function listAdminUserIdsForCommitteeNotifications(excludeUserId?: string) {
+export async function listAdminUserIdsForCommitteeNotifications(
+  excludeUserId?: string,
+) {
   const rows = await db
     .select({ id: users.id })
     .from(users)
-    .where(excludeUserId ? and(eq(users.role, "admin"), ne(users.id, excludeUserId)) : eq(users.role, "admin"));
+    .where(
+      excludeUserId
+        ? and(eq(users.role, "admin"), ne(users.id, excludeUserId))
+        : eq(users.role, "admin"),
+    );
   return rows.map((row) => row.id);
 }
-

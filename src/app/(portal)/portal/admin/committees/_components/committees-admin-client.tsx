@@ -356,15 +356,23 @@ export function CommitteesAdminClient(props: { committees: CommitteeRow[] }) {
           </div>
         </div>
         <div className="mt-3 overflow-x-auto">
-          <table className="min-w-full text-sm">
+          <table className="min-w-[72rem] text-sm">
             <thead className="bg-(--navy-900) text-(--white)">
               <tr>
-                <th className="px-3 py-2 text-left font-medium">Name</th>
-                <th className="px-3 py-2 text-left font-medium">Status</th>
-                <th className="px-3 py-2 text-left font-medium">Nominations</th>
-                <th className="px-3 py-2 text-left font-medium">Members</th>
-                <th className="px-3 py-2 text-left font-medium">Dates</th>
-                <th className="px-3 py-2 text-left font-medium">Actions</th>
+                <th className="w-[28%] px-3 py-2 text-left font-medium">
+                  Name
+                </th>
+                <th className="w-44 px-3 py-2 text-left font-medium">Status</th>
+                <th className="w-28 px-3 py-2 text-left font-medium">
+                  Nominations
+                </th>
+                <th className="w-36 px-3 py-2 text-left font-medium">
+                  Members
+                </th>
+                <th className="w-52 px-3 py-2 text-left font-medium">Dates</th>
+                <th className="w-80 px-3 py-2 text-left font-medium">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -388,7 +396,10 @@ export function CommitteesAdminClient(props: { committees: CommitteeRow[] }) {
                       </p>
                     </td>
                     <td className="px-3 py-2 align-top">
-                      <Badge variant={statusVariant(committee.status)}>
+                      <Badge
+                        variant={statusVariant(committee.status)}
+                        className="min-h-6 px-2.5 py-0.5 leading-tight whitespace-nowrap"
+                      >
                         {statusLabels[committee.status]}
                       </Badge>
                     </td>

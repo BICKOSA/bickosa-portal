@@ -280,9 +280,11 @@ export function Sidebar({ user }: { user: SidebarUser }) {
                             variant={item.badge === "Live" ? "gold" : "outline"}
                             size="sm"
                             className={cn(
-                              "ml-auto h-5 px-1.5 text-[10px]",
+                              "ml-auto h-5 min-w-10 shrink-0 px-2 text-[10px] leading-none tracking-[0.04em] whitespace-nowrap uppercase group-data-[collapsible=icon]:hidden",
+                              item.badge === "Live" &&
+                                "border-(--gold-500) bg-(--gold-500) text-(--navy-900) shadow-[0_0_0_1px_rgba(255,255,255,0.18)]",
                               item.badge !== "Live" &&
-                                "border-sidebar-foreground/20 text-sidebar-foreground/60",
+                                "border-white/25 bg-white/12 text-white shadow-[0_0_0_1px_rgba(255,255,255,0.08)]",
                             )}
                           >
                             {item.badge}
