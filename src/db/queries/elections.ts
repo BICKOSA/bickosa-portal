@@ -29,9 +29,12 @@ export async function getNominationsByPosition(positionId: string) {
       manifesto: nominations.manifesto,
       status: nominations.status,
       createdAt: nominations.createdAt,
-      nomineeId: users.id,
+      nomineeId: nominations.nomineeId,
       nomineeName: users.name,
       nomineeEmail: users.email,
+      offPlatformName: nominations.nomineeName,
+      offPlatformEmail: nominations.nomineeEmail,
+      offPlatformGraduationYear: nominations.nomineeGraduationYear,
       firstName: alumniProfiles.firstName,
       lastName: alumniProfiles.lastName,
       avatarKey: alumniProfiles.avatarKey,
@@ -40,7 +43,7 @@ export async function getNominationsByPosition(positionId: string) {
       currentEmployer: alumniProfiles.currentEmployer,
     })
     .from(nominations)
-    .innerJoin(users, eq(users.id, nominations.nomineeId))
+    .leftJoin(users, eq(users.id, nominations.nomineeId))
     .leftJoin(alumniProfiles, eq(alumniProfiles.userId, nominations.nomineeId))
     .where(and(eq(nominations.positionId, positionId), eq(nominations.status, "approved")))
     .orderBy(asc(alumniProfiles.lastName), asc(alumniProfiles.firstName), asc(users.name));
@@ -54,6 +57,7 @@ export async function getElectionResults(cycleId: string) {
       nominationId: nominations.id,
       nomineeUserId: nominations.nomineeId,
       nomineeName: users.name,
+      offPlatformName: nominations.nomineeName,
       firstName: alumniProfiles.firstName,
       lastName: alumniProfiles.lastName,
       voteCount: sql<number>`count(${electionVotes.id})::int`,
@@ -61,7 +65,7 @@ export async function getElectionResults(cycleId: string) {
     .from(electionVotes)
     .innerJoin(electionPositions, eq(electionPositions.id, electionVotes.positionId))
     .innerJoin(nominations, eq(nominations.id, electionVotes.nomineeId))
-    .innerJoin(users, eq(users.id, nominations.nomineeId))
+    .leftJoin(users, eq(users.id, nominations.nomineeId))
     .leftJoin(alumniProfiles, eq(alumniProfiles.userId, nominations.nomineeId))
     .where(eq(electionVotes.electionCycleId, cycleId))
     .groupBy(
@@ -69,6 +73,7 @@ export async function getElectionResults(cycleId: string) {
       electionPositions.title,
       nominations.id,
       nominations.nomineeId,
+      nominations.nomineeName,
       users.name,
       alumniProfiles.firstName,
       alumniProfiles.lastName,

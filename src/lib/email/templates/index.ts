@@ -11,6 +11,10 @@ export {
   type MentorshipRequestTemplateProps,
 } from "@/lib/email/templates/mentorship-request";
 export {
+  NominationInviteTemplate,
+  type NominationInviteTemplateProps,
+} from "@/lib/email/templates/nomination-invite";
+export {
   NewsletterTemplate,
   type NewsletterTemplateProps,
 } from "@/lib/email/templates/newsletter";

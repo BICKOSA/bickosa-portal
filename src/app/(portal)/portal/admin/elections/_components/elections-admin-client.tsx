@@ -51,8 +51,13 @@ type Nomination = {
   nominationId: string;
   cycleId: string;
   positionId: string;
-  nomineeId: string;
+  nomineeId: string | null;
   nomineeName: string;
+  nomineeEmail: string | null;
+  nomineePhone: string | null;
+  nomineeGraduationYear: number | null;
+  isOffPlatform: boolean;
+  inviteSentAt: Date | null;
   nominatedById: string;
   status: "pending" | "approved" | "rejected" | "withdrawn";
   manifesto: string | null;
@@ -417,12 +422,27 @@ export function ElectionsAdminClient(props: {
                     />
                     {nomination.nomineeName} · {nomination.positionTitle}
                   </label>
-                  <Badge variant={nomination.status === "approved" ? "success" : nomination.status === "rejected" ? "error" : "outline"}>
-                    {nomination.status}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    {nomination.isOffPlatform ? (
+                      <Badge variant="warning">Off-platform</Badge>
+                    ) : null}
+                    <Badge variant={nomination.status === "approved" ? "success" : nomination.status === "rejected" ? "error" : "outline"}>
+                      {nomination.status}
+                    </Badge>
+                  </div>
                 </div>
                 <p className="mt-1 text-xs text-(--text-3)">
                   Submitted: {new Date(nomination.createdAt).toLocaleString()}
+                  {nomination.isOffPlatform ? (
+                    <>
+                      {" · "}
+                      {nomination.nomineeEmail ? `Email: ${nomination.nomineeEmail}` : null}
+                      {nomination.nomineeEmail && nomination.nomineePhone ? " · " : null}
+                      {nomination.nomineePhone ? `Phone: ${nomination.nomineePhone}` : null}
+                      {nomination.nomineeGraduationYear ? ` · Class of ${nomination.nomineeGraduationYear}` : null}
+                      {nomination.inviteSentAt ? ` · Invite sent ${new Date(nomination.inviteSentAt).toLocaleDateString()}` : ""}
+                    </>
+                  ) : null}
                 </p>
                 <p className="mt-2 text-sm text-(--text-2)">
                   {nomination.manifesto?.slice(0, 180) ?? "No manifesto submitted yet."}

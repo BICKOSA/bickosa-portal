@@ -8,6 +8,8 @@ import {
   type EventReminderTemplateProps,
   MentorshipRequestTemplate,
   type MentorshipRequestTemplateProps,
+  NominationInviteTemplate,
+  type NominationInviteTemplateProps,
   NewsletterTemplate,
   type NewsletterTemplateProps,
   RenewalReminderTemplate,
@@ -256,6 +258,35 @@ export function sendMentorshipRequestEmail(input: SendMentorshipRequestEmailInpu
       requestUrl: input.requestUrl,
     }),
     text: `${input.requesterName} has sent you a mentorship request. View request: ${input.requestUrl}`,
+  });
+}
+
+export type SendNominationInviteEmailInput = {
+  to: string;
+  nomineeName: NominationInviteTemplateProps["nomineeName"];
+  positionTitle: NominationInviteTemplateProps["positionTitle"];
+  cycleTitle: NominationInviteTemplateProps["cycleTitle"];
+  nominatorName: NominationInviteTemplateProps["nominatorName"];
+  optionalNote?: NominationInviteTemplateProps["optionalNote"];
+  joinUrl?: NominationInviteTemplateProps["joinUrl"];
+};
+
+export function sendNominationInviteEmail(input: SendNominationInviteEmailInput) {
+  const joinUrl = input.joinUrl ?? `${appUrl}/join?ref=nomination`;
+  const nominator = input.nominatorName ?? "A fellow alum";
+
+  return sendEmail({
+    to: input.to,
+    subject: `You've been nominated for ${input.positionTitle}`,
+    react: createElement(NominationInviteTemplate, {
+      nomineeName: input.nomineeName,
+      positionTitle: input.positionTitle,
+      cycleTitle: input.cycleTitle,
+      nominatorName: input.nominatorName,
+      optionalNote: input.optionalNote ?? null,
+      joinUrl,
+    }),
+    text: `Hi ${input.nomineeName}, ${nominator} has nominated you for ${input.positionTitle} in the BICKOSA ${input.cycleTitle}. Join the portal to accept: ${joinUrl}`,
   });
 }
 

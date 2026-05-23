@@ -35,6 +35,17 @@ export default async function ElectionCyclePage({ params }: PageProps) {
   const existingVotesByPosition = Object.fromEntries(
     data.viewerVotes.map((vote) => [vote.positionId, vote.nomineeId]),
   );
+  const viewerNominations = data.viewerNominations
+    .filter((nomination): nomination is typeof nomination & { nomineeId: string } =>
+      nomination.nomineeId !== null,
+    )
+    .map((nomination) => ({
+      id: nomination.id,
+      positionId: nomination.positionId,
+      nomineeId: nomination.nomineeId,
+      status: nomination.status,
+      manifesto: nomination.manifesto,
+    }));
 
   return (
     <section className="space-y-5">
@@ -65,7 +76,7 @@ export default async function ElectionCyclePage({ params }: PageProps) {
                 description: position.description,
               }))}
               nominationsByPosition={nominationsByPosition}
-              viewerNominations={data.viewerNominations}
+              viewerNominations={viewerNominations}
               alumniCandidates={data.alumniCandidates}
               viewerId={session.user.id}
               isVerified={data.isVerified}

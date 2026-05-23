@@ -2,6 +2,7 @@ import { sql, type InferInsertModel, type InferSelectModel } from "drizzle-orm";
 import {
   bigint,
   boolean,
+  check,
   date,
   index,
   integer,
@@ -1015,12 +1016,15 @@ export const nominations = pgTable(
     positionId: uuid("position_id")
       .notNull()
       .references(() => electionPositions.id, { onDelete: "cascade" }),
-    nomineeId: uuid("nominee_id")
-      .notNull()
-      .references(() => users.id),
+    nomineeId: uuid("nominee_id").references(() => users.id),
     nominatedById: uuid("nominated_by_id")
       .notNull()
       .references(() => users.id),
+    nomineeName: varchar("nominee_name", { length: 255 }),
+    nomineeEmail: varchar("nominee_email", { length: 255 }),
+    nomineePhone: varchar("nominee_phone", { length: 32 }),
+    nomineeGraduationYear: integer("nominee_graduation_year"),
+    inviteSentAt: timestamp("invite_sent_at", { withTimezone: true }),
     manifesto: text("manifesto"),
     status: nominationStatusEnum("status").default("pending").notNull(),
     reviewedBy: uuid("reviewed_by").references(() => users.id),
@@ -1034,14 +1038,30 @@ export const nominations = pgTable(
       .notNull(),
   },
   (table) => ({
-    positionNomineeUnique: uniqueIndex(
-      "nominations_position_nominee_unique",
-    ).on(table.positionId, table.nomineeId),
+    positionNomineeUserUnique: uniqueIndex(
+      "nominations_position_nominee_user_unique",
+    )
+      .on(table.positionId, table.nomineeId)
+      .where(sql`${table.nomineeId} IS NOT NULL`),
+    positionNomineeEmailUnique: uniqueIndex(
+      "nominations_position_nominee_email_unique",
+    )
+      .on(table.positionId, sql`lower(${table.nomineeEmail})`)
+      .where(
+        sql`${table.nomineeId} IS NULL AND ${table.nomineeEmail} IS NOT NULL`,
+      ),
     cycleStatusIdx: index("nominations_election_cycle_status_idx").on(
       table.electionCycleId,
       table.status,
     ),
     nomineeIdx: index("nominations_nominee_id_idx").on(table.nomineeId),
+    nomineeEmailIdx: index("nominations_nominee_email_idx").on(
+      table.nomineeEmail,
+    ),
+    nomineeIdentityCheck: check(
+      "nominations_nominee_identity_check",
+      sql`${table.nomineeId} IS NOT NULL OR (${table.nomineeName} IS NOT NULL AND (${table.nomineeEmail} IS NOT NULL OR ${table.nomineePhone} IS NOT NULL))`,
+    ),
   }),
 );
 

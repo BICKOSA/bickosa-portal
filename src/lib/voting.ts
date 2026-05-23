@@ -134,13 +134,15 @@ export async function getElectionCyclePageData(cycleId: string, userId: string) 
           nomineeId: nominations.nomineeId,
           manifesto: nominations.manifesto,
           nomineeName: users.name,
+          offPlatformName: nominations.nomineeName,
+          offPlatformGraduationYear: nominations.nomineeGraduationYear,
           avatarKey: alumniProfiles.avatarKey,
           firstName: alumniProfiles.firstName,
           lastName: alumniProfiles.lastName,
           yearOfCompletion: alumniProfiles.yearOfCompletion,
         })
         .from(nominations)
-        .innerJoin(users, eq(users.id, nominations.nomineeId))
+        .leftJoin(users, eq(users.id, nominations.nomineeId))
         .leftJoin(alumniProfiles, eq(alumniProfiles.userId, nominations.nomineeId))
         .where(and(eq(nominations.electionCycleId, cycleId), eq(nominations.status, "approved"))),
       db.query.nominations.findMany({
@@ -172,24 +174,31 @@ export async function getElectionCyclePageData(cycleId: string, userId: string) 
     string,
     Array<{
       nominationId: string;
-      nomineeId: string;
+      nomineeId: string | null;
       nomineeName: string;
       avatarUrl: string | null;
       yearOfCompletion: number | null;
       manifesto: string | null;
+      isOffPlatform: boolean;
     }>
   >();
 
   for (const row of approvedNominations) {
     const bucket = nominationsByPosition.get(row.positionId) ?? [];
+    const isOffPlatform = row.nomineeId === null;
+    const profileName =
+      row.firstName && row.lastName
+        ? `${row.firstName} ${row.lastName}`.trim()
+        : null;
     bucket.push({
       nominationId: row.nominationId,
       nomineeId: row.nomineeId,
       nomineeName:
-        row.firstName && row.lastName ? `${row.firstName} ${row.lastName}`.trim() : row.nomineeName,
+        profileName ?? row.nomineeName ?? row.offPlatformName ?? "Unknown nominee",
       avatarUrl: row.avatarKey ? buildR2PublicUrl(row.avatarKey) : null,
-      yearOfCompletion: row.yearOfCompletion,
+      yearOfCompletion: row.yearOfCompletion ?? row.offPlatformGraduationYear,
       manifesto: row.manifesto,
+      isOffPlatform,
     });
     nominationsByPosition.set(row.positionId, bucket);
   }
@@ -298,7 +307,9 @@ export async function getElectionResultsPageData(cycleId: string) {
         ...group.items,
         {
           nomineeName:
-            row.firstName && row.lastName ? `${row.firstName} ${row.lastName}`.trim() : row.nomineeName,
+            row.firstName && row.lastName
+              ? `${row.firstName} ${row.lastName}`.trim()
+              : row.nomineeName ?? row.offPlatformName ?? "Unknown nominee",
           voteCount: row.voteCount,
           percentage: 0,
         },

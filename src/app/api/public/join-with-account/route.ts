@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "@/lib/db";
 import {
   alumniProfiles,
   consentLogs,
+  nominations,
   privacySettings,
   users,
 } from "@/lib/db/schema";
@@ -151,6 +152,22 @@ export async function POST(request: Request) {
           granted: payload.consent.newsletter,
         },
       ]);
+
+      // Attach this user to any off-platform nominations that captured the
+      // same email, so they show up in the viewer's "Pending nominations
+      // requiring action" panel once they sign in.
+      await tx
+        .update(nominations)
+        .set({ nomineeId: user.id, updatedAt: now })
+        .where(
+          and(
+            isNull(nominations.nomineeId),
+            eq(
+              sql`lower(${nominations.nomineeEmail})`,
+              payload.email.toLowerCase(),
+            ),
+          ),
+        );
     });
 
     await trackPortalEvent({

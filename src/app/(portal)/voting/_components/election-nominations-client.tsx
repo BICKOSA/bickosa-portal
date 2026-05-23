@@ -9,6 +9,7 @@ import { z } from "zod";
 
 import {
   acceptNomination,
+  submitOffPlatformNomination,
   submitPeerNomination,
   submitSelfNomination,
   withdrawNomination,
@@ -38,11 +39,12 @@ type PositionItem = {
 
 type NominationCard = {
   nominationId: string;
-  nomineeId: string;
+  nomineeId: string | null;
   nomineeName: string;
   avatarUrl: string | null;
   yearOfCompletion: number | null;
   manifesto: string | null;
+  isOffPlatform: boolean;
 };
 
 type ViewerNomination = {
@@ -68,6 +70,29 @@ const peerNominationSchema = z.object({
   nomineeId: z.string().uuid("Please select a nominee."),
   note: z.string().trim().max(500).optional(),
 });
+
+const currentYear = new Date().getFullYear();
+
+const offPlatformNominationFormSchema = z.object({
+  name: z.string().trim().min(2, "Full name is required.").max(255),
+  email: z.email("Enter a valid email address."),
+  graduationYear: z
+    .string()
+    .trim()
+    .max(4)
+    .optional()
+    .refine(
+      (value) => {
+        if (!value) return true;
+        const year = Number.parseInt(value, 10);
+        return Number.isFinite(year) && year >= 1900 && year <= currentYear + 1;
+      },
+      { message: `Enter a year between 1900 and ${currentYear + 1}.` },
+    ),
+  note: z.string().trim().max(500).optional(),
+});
+
+type OffPlatformFormValues = z.infer<typeof offPlatformNominationFormSchema>;
 
 const acceptSchema = z.object({
   manifesto: z.string().trim().min(100, "Manifesto must be at least 100 characters.").max(1000),
@@ -124,6 +149,18 @@ export function ElectionNominationsClient({
       nomineeId: "",
       note: "",
     },
+  });
+
+  const [peerMode, setPeerMode] = React.useState<"member" | "off_platform">("member");
+
+  const offPlatformForm = useForm<OffPlatformFormValues>({
+    resolver: zodResolver(offPlatformNominationFormSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      graduationYear: "",
+      note: "",
+    } satisfies OffPlatformFormValues,
   });
 
   const acceptForm = useForm<z.infer<typeof acceptSchema>>({
@@ -196,6 +233,34 @@ export function ElectionNominationsClient({
     router.refresh();
   }
 
+  async function handleOffPlatformNomination(values: OffPlatformFormValues) {
+    if (!selectedPosition) return;
+    setBusy(true);
+    const parsedYear = values.graduationYear ? Number.parseInt(values.graduationYear, 10) : null;
+    const result = await submitOffPlatformNomination({
+      positionId: selectedPosition.id,
+      name: values.name.trim(),
+      email: values.email.trim(),
+      graduationYear: parsedYear && Number.isFinite(parsedYear) ? parsedYear : null,
+      note: values.note?.trim() || undefined,
+    });
+    setBusy(false);
+    if (!result.ok) {
+      toast({ title: "Off-platform nomination failed", description: result.message });
+      return;
+    }
+    toast({
+      title: result.warning ? "Nomination saved with warning" : "Off-platform nomination submitted",
+      description: result.warning ?? result.message,
+      variant: result.warning ? "warning" : "success",
+      durationMs: result.warning ? 6500 : undefined,
+    });
+    setPeerModalOpen(false);
+    setPeerMode("member");
+    offPlatformForm.reset();
+    router.refresh();
+  }
+
   async function handleAcceptNomination(values: z.infer<typeof acceptSchema>) {
     if (!acceptingNominationId) return;
     setBusy(true);
@@ -250,7 +315,14 @@ export function ElectionNominationsClient({
                       <div className="flex items-center gap-3">
                         <Avatar src={nomination.avatarUrl} name={nomination.nomineeName} size="md" />
                         <div>
-                          <p className="text-sm font-semibold text-[var(--text-1)]">{nomination.nomineeName}</p>
+                          <p className="text-sm font-semibold text-[var(--text-1)]">
+                            {nomination.nomineeName}
+                            {nomination.isOffPlatform ? (
+                              <span className="ml-2 inline-flex items-center rounded-[var(--r-full)] border border-[var(--gold-300)] bg-[var(--gold-50)] px-2 text-[10px] font-medium uppercase tracking-wide text-[var(--gold-800)]">
+                                Off-platform
+                              </span>
+                            ) : null}
+                          </p>
                           <p className="text-xs text-[var(--text-3)]">
                             {nomination.yearOfCompletion ? `Class of ${nomination.yearOfCompletion}` : "Alumni"}
                           </p>
@@ -325,68 +397,143 @@ export function ElectionNominationsClient({
                 <DialogContent className="w-[min(92vw,42rem)]">
                   <DialogHeader>
                     <DialogTitle>Peer nomination: {position.title}</DialogTitle>
-                    <DialogDescription>Search verified alumni by name or graduation year.</DialogDescription>
+                    <DialogDescription>
+                      Nominate a fellow alum — already on the portal, or invite someone new.
+                    </DialogDescription>
                   </DialogHeader>
-                  <form className="space-y-4" onSubmit={peerForm.handleSubmit(handlePeerNomination)}>
-                    <div className="relative">
-                      <Search className="pointer-events-none absolute top-2.5 left-2.5 size-4 text-[var(--text-3)]" />
-                      <Input
-                        placeholder="Search alumni..."
-                        value={search}
-                        onChange={(event) => setSearch(event.target.value)}
-                        className="pl-8"
-                      />
-                    </div>
 
-                    <div className="max-h-64 space-y-2 overflow-y-auto rounded-[var(--r-md)] border border-[var(--border)] p-2">
-                      {filteredCandidates.map((candidate) => {
-                        const selected = selectedPeerNomineeId === candidate.id;
-                        return (
-                          <button
-                            key={candidate.id}
-                            type="button"
-                            onClick={() => {
-                              setSelectedPeerNomineeId(candidate.id);
-                              peerForm.setValue("nomineeId", candidate.id, { shouldValidate: true });
-                            }}
-                            className={`flex w-full items-center justify-between rounded-[var(--r-md)] border p-2 text-left ${
-                              selected
-                                ? "border-[var(--navy-700)] bg-[var(--navy-50)]"
-                                : "border-[var(--border)] bg-[var(--white)]"
-                            }`}
-                          >
-                            <span className="text-sm text-[var(--text-1)]">{candidate.fullName}</span>
-                            <span className="text-xs text-[var(--text-3)]">
-                              {candidate.yearOfCompletion ? `Class of ${candidate.yearOfCompletion}` : "Alumni"}
-                            </span>
-                          </button>
-                        );
-                      })}
-                      {filteredCandidates.length === 0 ? (
-                        <p className="px-2 py-4 text-center text-sm text-[var(--text-3)]">
-                          No matching alumni found.
+                  <div className="inline-flex rounded-[var(--r-md)] border border-[var(--border)] bg-[var(--surface)] p-1 text-sm">
+                    <button
+                      type="button"
+                      onClick={() => setPeerMode("member")}
+                      className={`rounded-[var(--r-sm)] px-3 py-1.5 font-medium transition ${
+                        peerMode === "member"
+                          ? "bg-[var(--white)] text-[var(--navy-900)] shadow-sm"
+                          : "text-[var(--text-3)] hover:text-[var(--text-1)]"
+                      }`}
+                    >
+                      On the platform
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPeerMode("off_platform")}
+                      className={`rounded-[var(--r-sm)] px-3 py-1.5 font-medium transition ${
+                        peerMode === "off_platform"
+                          ? "bg-[var(--white)] text-[var(--navy-900)] shadow-sm"
+                          : "text-[var(--text-3)] hover:text-[var(--text-1)]"
+                      }`}
+                    >
+                      Not yet on the platform
+                    </button>
+                  </div>
+
+                  {peerMode === "member" ? (
+                    <form className="space-y-4" onSubmit={peerForm.handleSubmit(handlePeerNomination)}>
+                      <div className="relative">
+                        <Search className="pointer-events-none absolute top-2.5 left-2.5 size-4 text-[var(--text-3)]" />
+                        <Input
+                          placeholder="Search alumni..."
+                          value={search}
+                          onChange={(event) => setSearch(event.target.value)}
+                          className="pl-8"
+                        />
+                      </div>
+
+                      <div className="max-h-64 space-y-2 overflow-y-auto rounded-[var(--r-md)] border border-[var(--border)] p-2">
+                        {filteredCandidates.map((candidate) => {
+                          const selected = selectedPeerNomineeId === candidate.id;
+                          return (
+                            <button
+                              key={candidate.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedPeerNomineeId(candidate.id);
+                                peerForm.setValue("nomineeId", candidate.id, { shouldValidate: true });
+                              }}
+                              className={`flex w-full items-center justify-between rounded-[var(--r-md)] border p-2 text-left ${
+                                selected
+                                  ? "border-[var(--navy-700)] bg-[var(--navy-50)]"
+                                  : "border-[var(--border)] bg-[var(--white)]"
+                              }`}
+                            >
+                              <span className="text-sm text-[var(--text-1)]">{candidate.fullName}</span>
+                              <span className="text-xs text-[var(--text-3)]">
+                                {candidate.yearOfCompletion ? `Class of ${candidate.yearOfCompletion}` : "Alumni"}
+                              </span>
+                            </button>
+                          );
+                        })}
+                        {filteredCandidates.length === 0 ? (
+                          <p className="px-2 py-4 text-center text-sm text-[var(--text-3)]">
+                            No matching alumni found.
+                          </p>
+                        ) : null}
+                      </div>
+
+                      <Textarea
+                        label="Optional note to nominee"
+                        maxLength={500}
+                        {...peerForm.register("note")}
+                        helperText={`${peerForm.watch("note")?.length ?? 0}/500`}
+                        error={peerForm.formState.errors.note?.message}
+                      />
+                      {peerForm.formState.errors.nomineeId?.message ? (
+                        <p className="text-xs text-[var(--error)]">
+                          {peerForm.formState.errors.nomineeId?.message}
                         </p>
                       ) : null}
-                    </div>
-
-                    <Textarea
-                      label="Optional note to nominee"
-                      maxLength={500}
-                      {...peerForm.register("note")}
-                      helperText={`${peerForm.watch("note")?.length ?? 0}/500`}
-                      error={peerForm.formState.errors.note?.message}
-                    />
-                    {peerForm.formState.errors.nomineeId?.message ? (
-                      <p className="text-xs text-[var(--error)]">
-                        {peerForm.formState.errors.nomineeId?.message}
+                      <DialogFooter>
+                        <Button type="submit" variant="navy" isLoading={isBusy}>
+                          Submit peer nomination
+                        </Button>
+                      </DialogFooter>
+                    </form>
+                  ) : (
+                    <form
+                      className="space-y-4"
+                      onSubmit={offPlatformForm.handleSubmit(handleOffPlatformNomination)}
+                    >
+                      <p className="rounded-[var(--r-md)] bg-[var(--navy-50)] px-3 py-2 text-xs text-[var(--navy-700)]">
+                        We&apos;ll save the nomination and email them an invite to join the
+                        portal. Once they sign up with the same email, the nomination is
+                        automatically linked to their account.
                       </p>
-                    ) : null}
-                    <DialogFooter>
-                      <Button type="submit" variant="navy" isLoading={isBusy}>
-                        Submit peer nomination
-                      </Button>
-                    </DialogFooter>
-                  </form>
+                      <Input
+                        label="Full name"
+                        autoComplete="name"
+                        {...offPlatformForm.register("name")}
+                        error={offPlatformForm.formState.errors.name?.message}
+                      />
+                      <Input
+                        label="Email"
+                        type="email"
+                        autoComplete="email"
+                        {...offPlatformForm.register("email")}
+                        error={offPlatformForm.formState.errors.email?.message}
+                      />
+                      <Input
+                        label="Graduation year"
+                        type="number"
+                        inputMode="numeric"
+                        min={1900}
+                        max={currentYear + 1}
+                        {...offPlatformForm.register("graduationYear")}
+                        error={offPlatformForm.formState.errors.graduationYear?.message}
+                      />
+                      <Textarea
+                        label="Optional note to nominee"
+                        maxLength={500}
+                        {...offPlatformForm.register("note")}
+                        helperText={`${offPlatformForm.watch("note")?.length ?? 0}/500`}
+                        error={offPlatformForm.formState.errors.note?.message}
+                      />
+                      <DialogFooter>
+                        <Button type="submit" variant="navy" isLoading={isBusy}>
+                          Send invite & submit nomination
+                        </Button>
+                      </DialogFooter>
+                    </form>
+                  )}
                 </DialogContent>
               </Dialog>
             </div>

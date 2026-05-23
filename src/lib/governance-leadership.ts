@@ -109,6 +109,10 @@ async function getLeadershipFromPublishedElection(): Promise<LeadershipPerson[]>
       continue;
     }
     seenPosition.add(row.positionId);
+    if (!row.nomineeUserId || !row.nomineeName) {
+      // Off-platform nominee that hasn't claimed their account yet — skip.
+      continue;
+    }
     leaders.push({
       userId: row.nomineeUserId,
       fullName: row.firstName && row.lastName ? `${row.firstName} ${row.lastName}`.trim() : row.nomineeName,

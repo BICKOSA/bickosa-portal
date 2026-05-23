@@ -19,7 +19,7 @@ import {
   pollVotes,
   users,
 } from "@/lib/db/schema";
-import { sendEmail } from "@/lib/email/resend";
+import { sendEmail, sendNominationInviteEmail } from "@/lib/email/resend";
 import { createNotification, createNotificationsForUsers } from "@/lib/notifications/create-notification";
 
 type ActionResult =
@@ -36,6 +36,34 @@ const peerNominationSchema = z.object({
   nomineeId: z.string().uuid(),
   note: z.string().trim().max(500).optional(),
 });
+
+const offPlatformNominationSchema = z.object({
+  positionId: z.string().uuid(),
+  name: z.string().trim().min(2, "Nominee name is required.").max(255),
+  email: z.email("Enter a valid email address."),
+  // Phone is accepted but not yet acted on; SMS dispatch is disabled until
+  // the Egosms integration is enabled. Stored on the nomination row for
+  // future use.
+  phone: z
+    .union([
+      z.literal(""),
+      z
+        .string()
+        .trim()
+        .regex(/^\+?[0-9()\-\s]{7,20}$/, "Enter a valid phone number."),
+    ])
+    .optional(),
+  graduationYear: z
+    .number()
+    .int()
+    .min(1900)
+    .max(new Date().getFullYear() + 1)
+    .nullable()
+    .optional(),
+  note: z.string().trim().max(500).optional(),
+});
+
+export type OffPlatformNominationInput = z.infer<typeof offPlatformNominationSchema>;
 
 const acceptNominationSchema = z.object({
   nominationId: z.string().uuid(),
@@ -304,6 +332,169 @@ export async function submitPeerNomination(
       appNotificationDelivered && emailDelivered
         ? undefined
         : "The nomination was saved, but nominee notification delivery may need manual follow-up.",
+  };
+}
+
+export async function submitOffPlatformNomination(
+  input: OffPlatformNominationInput,
+): Promise<ActionResult> {
+  const session = await getSessionUser();
+  if (!session) {
+    return { ok: false, message: "You must be signed in." };
+  }
+
+  const parsed = offPlatformNominationSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      message: parsed.error.issues[0]?.message ?? "Invalid nomination input.",
+    };
+  }
+
+  const isVerified = await getVerifiedMemberState(session.user.id);
+  if (!isVerified) {
+    return {
+      ok: false,
+      message: "Only verified members can submit nominations.",
+    };
+  }
+
+  const position = await getPositionWithCycle(parsed.data.positionId);
+  if (!position) {
+    return { ok: false, message: "Position not found." };
+  }
+
+  const now = new Date();
+  if (
+    position.status !== "nominations_open" ||
+    now < position.nominationOpens ||
+    now > position.nominationCloses
+  ) {
+    return {
+      ok: false,
+      message: "Nominations are currently closed for this position.",
+    };
+  }
+
+  const cleanEmail = parsed.data.email.trim().toLowerCase();
+  const cleanPhone = parsed.data.phone?.trim() || null;
+  const cleanName = parsed.data.name.trim();
+  const cleanNote = parsed.data.note?.trim() || null;
+
+  // If the email matches a registered user, downgrade to a normal peer
+  // nomination so we never create parallel rows.
+  const existingUser = await db.query.users.findFirst({
+    where: eq(users.email, cleanEmail),
+    columns: { id: true },
+  });
+  if (existingUser) {
+    return submitPeerNomination(
+      parsed.data.positionId,
+      existingUser.id,
+      cleanNote ?? undefined,
+    );
+  }
+
+  let row: { id: string } | undefined;
+  try {
+    [row] = await db
+      .insert(nominations)
+      .values({
+        electionCycleId: position.cycleId,
+        positionId: position.positionId,
+        nomineeId: null,
+        nominatedById: session.user.id,
+        nomineeName: cleanName,
+        nomineeEmail: cleanEmail,
+        nomineePhone: cleanPhone,
+        nomineeGraduationYear: parsed.data.graduationYear ?? null,
+        reviewNote: cleanNote,
+        status: "pending",
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning({ id: nominations.id });
+  } catch (error) {
+    if (error instanceof Error && /unique|duplicate/i.test(error.message)) {
+      return {
+        ok: false,
+        message:
+          "Someone has already nominated this person for the position with the same email.",
+      };
+    }
+    throw error;
+  }
+
+  if (!row) {
+    return { ok: false, message: "Could not save the nomination." };
+  }
+
+  const adminUserIds = await listAdminUserIds();
+  const adminNotificationDelivered =
+    adminUserIds.length === 0
+      ? true
+      : await runNonBlockingNominationTask(
+          "admin off-platform nomination notification",
+          async () => {
+            await createNotificationsForUsers({
+              userIds: adminUserIds,
+              type: "nomination_submitted",
+              title: "New off-platform nomination",
+              body: `${session.user.name ?? "A member"} nominated ${cleanName} (off-platform) for ${position.positionTitle}.`,
+              actionUrl: `/voting/elections/${position.cycleId}`,
+              idempotencyKeyPrefix: `nomination_submitted:${row.id}`,
+            });
+          },
+        );
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://portal.bickosa.org";
+  const joinUrl = `${appUrl}/join?ref=nomination`;
+
+  const emailDelivered = await runNonBlockingNominationTask(
+    "off-platform nomination email",
+    async () => {
+      await sendNominationInviteEmail({
+        to: cleanEmail,
+        nomineeName: cleanName,
+        positionTitle: position.positionTitle,
+        cycleTitle: position.cycleTitle,
+        nominatorName: session.user.name ?? null,
+        optionalNote: cleanNote,
+        joinUrl,
+      });
+    },
+  );
+
+  // NOTE: SMS dispatch via Egosms is intentionally disabled for now.
+  // The phone field is captured into nominations.nominee_phone so we can
+  // enable SMS later without re-collecting it.
+
+  if (emailDelivered) {
+    await runNonBlockingNominationTask(
+      "off-platform nomination invite_sent_at update",
+      async () => {
+        await db
+          .update(nominations)
+          .set({ inviteSentAt: new Date(), updatedAt: new Date() })
+          .where(eq(nominations.id, row.id));
+      },
+    );
+  }
+
+  revalidatePath(`/voting/elections/${position.cycleId}`);
+  revalidatePath("/voting");
+
+  const deliveryWarnings: string[] = [];
+  if (!emailDelivered) deliveryWarnings.push("email");
+  if (!adminNotificationDelivered) deliveryWarnings.push("admin alert");
+
+  return {
+    ok: true,
+    message: "Off-platform nomination saved and invite emailed.",
+    warning:
+      deliveryWarnings.length > 0
+        ? `Nomination saved, but ${deliveryWarnings.join(", ")} delivery may need follow-up.`
+        : undefined,
   };
 }
 

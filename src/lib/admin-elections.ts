@@ -258,13 +258,19 @@ export async function listNominationsForAdmin(filters: {
   if (filters.positionId) clauses.push(eq(nominations.positionId, filters.positionId));
   if (filters.status) clauses.push(eq(nominations.status, filters.status));
 
-  return db
+  const rows = await db
     .select({
       nominationId: nominations.id,
       cycleId: nominations.electionCycleId,
       positionId: nominations.positionId,
       nomineeId: nominations.nomineeId,
-      nomineeName: users.name,
+      nomineeUserName: users.name,
+      nomineeUserEmail: users.email,
+      offPlatformName: nominations.nomineeName,
+      offPlatformEmail: nominations.nomineeEmail,
+      offPlatformPhone: nominations.nomineePhone,
+      offPlatformGraduationYear: nominations.nomineeGraduationYear,
+      inviteSentAt: nominations.inviteSentAt,
       nominatedById: nominations.nominatedById,
       status: nominations.status,
       manifesto: nominations.manifesto,
@@ -273,10 +279,35 @@ export async function listNominationsForAdmin(filters: {
       positionTitle: electionPositions.title,
     })
     .from(nominations)
-    .innerJoin(users, eq(users.id, nominations.nomineeId))
+    .leftJoin(users, eq(users.id, nominations.nomineeId))
     .innerJoin(electionPositions, eq(electionPositions.id, nominations.positionId))
     .where(clauses.length > 0 ? and(...clauses) : undefined)
     .orderBy(desc(nominations.createdAt));
+
+  return rows.map((row) => {
+    const isOffPlatform = row.nomineeId === null;
+    return {
+      nominationId: row.nominationId,
+      cycleId: row.cycleId,
+      positionId: row.positionId,
+      nomineeId: row.nomineeId,
+      nomineeName:
+        (isOffPlatform ? row.offPlatformName : row.nomineeUserName) ??
+        row.offPlatformName ??
+        "Unknown nominee",
+      nomineeEmail: row.nomineeUserEmail ?? row.offPlatformEmail ?? null,
+      nomineePhone: row.offPlatformPhone,
+      nomineeGraduationYear: row.offPlatformGraduationYear,
+      isOffPlatform,
+      inviteSentAt: row.inviteSentAt,
+      nominatedById: row.nominatedById,
+      status: row.status,
+      manifesto: row.manifesto,
+      createdAt: row.createdAt,
+      reviewNote: row.reviewNote,
+      positionTitle: row.positionTitle,
+    };
+  });
 }
 
 export async function reviewNomination(input: {
@@ -290,12 +321,13 @@ export async function reviewNomination(input: {
       id: nominations.id,
       cycleId: nominations.electionCycleId,
       nomineeId: nominations.nomineeId,
-      nomineeEmail: users.email,
-      nomineeName: users.name,
+      nomineeUserEmail: users.email,
+      nomineeUserName: users.name,
+      offPlatformName: nominations.nomineeName,
       positionTitle: electionPositions.title,
     })
     .from(nominations)
-    .innerJoin(users, eq(users.id, nominations.nomineeId))
+    .leftJoin(users, eq(users.id, nominations.nomineeId))
     .innerJoin(electionPositions, eq(electionPositions.id, nominations.positionId))
     .where(eq(nominations.id, input.nominationId))
     .limit(1)
@@ -312,7 +344,7 @@ export async function reviewNomination(input: {
     })
     .where(eq(nominations.id, input.nominationId));
 
-  if (nomination) {
+  if (nomination && nomination.nomineeId) {
     await createNotificationsForUsers({
       userIds: [nomination.nomineeId],
       type: input.status === "approved" ? "nomination_submitted" : "peer_nomination_received",
@@ -328,26 +360,28 @@ export async function reviewNomination(input: {
       idempotencyKeyPrefix: `nomination_review:${nomination.id}:${input.status}`,
     });
 
-    await sendEmail({
-      to: nomination.nomineeEmail,
-      subject:
-        input.status === "approved"
-          ? `Nomination approved — ${nomination.positionTitle}`
-          : `Nomination update — ${nomination.positionTitle}`,
-      react: createElement("div", null, [
-        createElement(
-          "p",
-          { key: "line1" },
-          `Hello ${nomination.nomineeName}, your nomination for ${nomination.positionTitle} has been ${input.status}.`,
-        ),
-        input.reviewNote
-          ? createElement("p", { key: "line2" }, `Review note: ${input.reviewNote}`)
-          : createElement("p", { key: "line2" }, "Please check the voting portal for more details."),
-      ]),
-      text: `Your nomination for ${nomination.positionTitle} has been ${input.status}. ${
-        input.reviewNote ? `Review note: ${input.reviewNote}` : ""
-      }`,
-    });
+    if (nomination.nomineeUserEmail) {
+      await sendEmail({
+        to: nomination.nomineeUserEmail,
+        subject:
+          input.status === "approved"
+            ? `Nomination approved — ${nomination.positionTitle}`
+            : `Nomination update — ${nomination.positionTitle}`,
+        react: createElement("div", null, [
+          createElement(
+            "p",
+            { key: "line1" },
+            `Hello ${nomination.nomineeUserName ?? nomination.offPlatformName ?? "there"}, your nomination for ${nomination.positionTitle} has been ${input.status}.`,
+          ),
+          input.reviewNote
+            ? createElement("p", { key: "line2" }, `Review note: ${input.reviewNote}`)
+            : createElement("p", { key: "line2" }, "Please check the voting portal for more details."),
+        ]),
+        text: `Your nomination for ${nomination.positionTitle} has been ${input.status}. ${
+          input.reviewNote ? `Review note: ${input.reviewNote}` : ""
+        }`,
+      });
+    }
   }
 }
 
@@ -377,16 +411,22 @@ export async function bulkApproveNominations(nominationIds: string[], reviewerId
     .innerJoin(electionPositions, eq(electionPositions.id, nominations.positionId))
     .where(inArray(nominations.id, nominationIds));
 
-  await createNotificationsForUsers({
-    userIds: approvedRows.map((row) => row.nomineeId),
-    type: "nomination_submitted",
-    title: "Nomination approved",
-    body: "Your nomination has been approved.",
-    actionUrl: null,
-    idempotencyKeyPrefix: `bulk_nomination_approved:${reviewerId}:${Date.now()}`,
-  });
+  const userNomineeIds = approvedRows
+    .map((row) => row.nomineeId)
+    .filter((id): id is string => id !== null);
+  if (userNomineeIds.length > 0) {
+    await createNotificationsForUsers({
+      userIds: userNomineeIds,
+      type: "nomination_submitted",
+      title: "Nomination approved",
+      body: "Your nomination has been approved.",
+      actionUrl: null,
+      idempotencyKeyPrefix: `bulk_nomination_approved:${reviewerId}:${Date.now()}`,
+    });
+  }
 
   for (const row of approvedRows) {
+    if (!row.nomineeEmail) continue;
     await sendEmail({
       to: row.nomineeEmail,
       subject: `Nomination approved — ${row.positionTitle}`,
@@ -394,7 +434,7 @@ export async function bulkApproveNominations(nominationIds: string[], reviewerId
         createElement(
           "p",
           { key: "line1" },
-          `Hello ${row.nomineeName}, your nomination for ${row.positionTitle} has been approved.`,
+          `Hello ${row.nomineeName ?? "there"}, your nomination for ${row.positionTitle} has been approved.`,
         ),
       ]),
       text: `Your nomination for ${row.positionTitle} has been approved.`,
