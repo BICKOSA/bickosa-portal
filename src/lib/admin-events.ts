@@ -305,16 +305,6 @@ function buildListWhere(query: AdminEventsListQuery): SQL | undefined {
 export async function listAdminEvents(query: AdminEventsListQuery): Promise<AdminEventsListResult> {
   const where = buildListWhere(query);
   const offset = (query.page - 1) * query.limit;
-  const attendeeCounts = db.$with("event_attendee_counts").as(
-    db
-      .select({
-        eventId: eventRegistrations.eventId,
-        attendeeCount: sql<number>`count(*)::int`,
-      })
-      .from(eventRegistrations)
-      .where(eq(eventRegistrations.status, "attending"))
-      .groupBy(eventRegistrations.eventId),
-  );
 
   const [countRow] = await db
     .select({
@@ -324,7 +314,6 @@ export async function listAdminEvents(query: AdminEventsListQuery): Promise<Admi
     .where(where);
 
   const data = await db
-    .with(attendeeCounts)
     .select({
       id: events.id,
       title: events.title,
@@ -334,13 +323,17 @@ export async function listAdminEvents(query: AdminEventsListQuery): Promise<Admi
       locationName: events.locationName,
       locationAddress: events.locationAddress,
       isOnline: events.isOnline,
-      attendeeCount: sql<number>`coalesce(${attendeeCounts.attendeeCount}, 0)::int`,
+      attendeeCount: sql<number>`(
+        select coalesce(count(*), 0)::int
+        from ${eventRegistrations}
+        where ${eventRegistrations.eventId} = ${events.id}
+          and ${eventRegistrations.status} = 'attending'
+      )`,
       maxAttendees: events.maxAttendees,
       isPublished: events.isPublished,
       updatedAt: events.updatedAt,
     })
     .from(events)
-    .leftJoin(attendeeCounts, eq(attendeeCounts.eventId, events.id))
     .where(where)
     .orderBy(desc(events.startAt), asc(events.title))
     .limit(query.limit)
