@@ -791,3 +791,172 @@ export async function getPersonalDashboardData(
     actionItems: actionItems.slice(0, ELECTION_PAGE_LIMIT * 2 + 6),
   };
 }
+
+export type MonthlyEvent = {
+  id: string;
+  slug: string;
+  title: string;
+  startAt: Date;
+  locationName: string | null;
+  locationCity: string | null;
+  isOnline: boolean;
+  type: string;
+};
+
+export type MonthlyElectionMilestone = {
+  id: string;
+  cycleId: string;
+  cycleTitle: string;
+  type: "nominations_close" | "voting_opens" | "voting_closes";
+  at: Date;
+};
+
+export type MonthlyCampaign = {
+  id: string;
+  slug: string;
+  title: string;
+  raisedAmount: bigint;
+  goalAmount: bigint;
+  progressPercent: number | null;
+  endDate: Date | null;
+};
+
+export type MonthlyHighlights = {
+  monthLabel: string;
+  events: MonthlyEvent[];
+  electionMilestones: MonthlyElectionMilestone[];
+  campaigns: MonthlyCampaign[];
+};
+
+const MONTH_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  month: "long",
+  year: "numeric",
+});
+
+export async function getMonthlyHighlights(): Promise<MonthlyHighlights> {
+  const now = new Date();
+  const monthStart = startOfMonth(now);
+  const nextMonthStart = addMonths(monthStart, 1);
+  const windowStart = now > monthStart ? now : monthStart;
+
+  const [eventRows, cycleRows, campaignRows] = await Promise.all([
+    db
+      .select({
+        id: events.id,
+        slug: events.slug,
+        title: events.title,
+        startAt: events.startAt,
+        locationName: events.locationName,
+        locationCity: events.locationCity,
+        isOnline: events.isOnline,
+        type: events.type,
+      })
+      .from(events)
+      .where(
+        and(
+          eq(events.isPublished, true),
+          gte(events.startAt, windowStart),
+          lt(events.startAt, nextMonthStart),
+        ),
+      )
+      .orderBy(events.startAt)
+      .limit(4),
+    db
+      .select({
+        id: electionCycles.id,
+        title: electionCycles.title,
+        nominationCloses: electionCycles.nominationCloses,
+        votingOpens: electionCycles.votingOpens,
+        votingCloses: electionCycles.votingCloses,
+      })
+      .from(electionCycles)
+      .where(
+        or(
+          and(
+            gte(electionCycles.nominationCloses, windowStart),
+            lt(electionCycles.nominationCloses, nextMonthStart),
+          ),
+          and(
+            gte(electionCycles.votingOpens, windowStart),
+            lt(electionCycles.votingOpens, nextMonthStart),
+          ),
+          and(
+            gte(electionCycles.votingCloses, windowStart),
+            lt(electionCycles.votingCloses, nextMonthStart),
+          ),
+        ),
+      ),
+    db
+      .select({
+        id: campaigns.id,
+        slug: campaigns.slug,
+        title: campaigns.title,
+        raisedAmount: campaigns.raisedAmount,
+        goalAmount: campaigns.goalAmount,
+        endDate: campaigns.endDate,
+        isFeatured: campaigns.isFeatured,
+      })
+      .from(campaigns)
+      .where(and(eq(campaigns.isActive, true), eq(campaigns.isPublished, true)))
+      .orderBy(desc(campaigns.isFeatured), desc(campaigns.raisedAmount))
+      .limit(3),
+  ]);
+
+  const electionMilestones: MonthlyElectionMilestone[] = [];
+  for (const cycle of cycleRows) {
+    if (
+      cycle.nominationCloses >= windowStart &&
+      cycle.nominationCloses < nextMonthStart
+    ) {
+      electionMilestones.push({
+        id: `${cycle.id}:nominations_close`,
+        cycleId: cycle.id,
+        cycleTitle: cycle.title,
+        type: "nominations_close",
+        at: cycle.nominationCloses,
+      });
+    }
+    if (
+      cycle.votingOpens >= windowStart &&
+      cycle.votingOpens < nextMonthStart
+    ) {
+      electionMilestones.push({
+        id: `${cycle.id}:voting_opens`,
+        cycleId: cycle.id,
+        cycleTitle: cycle.title,
+        type: "voting_opens",
+        at: cycle.votingOpens,
+      });
+    }
+    if (
+      cycle.votingCloses >= windowStart &&
+      cycle.votingCloses < nextMonthStart
+    ) {
+      electionMilestones.push({
+        id: `${cycle.id}:voting_closes`,
+        cycleId: cycle.id,
+        cycleTitle: cycle.title,
+        type: "voting_closes",
+        at: cycle.votingCloses,
+      });
+    }
+  }
+  electionMilestones.sort((a, b) => a.at.getTime() - b.at.getTime());
+
+  const monthlyCampaigns: MonthlyCampaign[] = campaignRows.map((row) => ({
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    raisedAmount: row.raisedAmount,
+    goalAmount: row.goalAmount,
+    progressPercent: campaignProgressPercent(row.raisedAmount, row.goalAmount),
+    endDate: row.endDate,
+  }));
+
+  return {
+    monthLabel: MONTH_FORMATTER.format(now),
+    events: eventRows,
+    electionMilestones,
+    campaigns: monthlyCampaigns,
+  };
+}

@@ -30,9 +30,13 @@ import {
 } from "@/components/ui/card";
 import { auth } from "@/lib/auth/auth";
 import {
+  getMonthlyHighlights,
   getPersonalDashboardData,
   getPortalDashboardData,
   type DashboardActionItem,
+  type MonthlyElectionMilestone,
+  type MonthlyEvent,
+  type MonthlyHighlights,
   type PortalDashboardActivity,
 } from "@/lib/portal-dashboard";
 
@@ -131,9 +135,10 @@ export default async function PortalDashboardPage() {
   const userId = session.user.id;
   const sessionFirstName = (session.user.name ?? "").split(/\s+/)[0] || null;
 
-  const [data, personal] = await Promise.all([
+  const [data, personal, monthly] = await Promise.all([
     getPortalDashboardData(),
     getPersonalDashboardData(userId),
+    getMonthlyHighlights(),
   ]);
 
   const displayName = personal.profile.firstName ?? sessionFirstName ?? "there";
@@ -229,6 +234,9 @@ export default async function PortalDashboardPage() {
           </Card>
         </div>
       </section>
+
+      {/* What's happening this month */}
+      <MonthlyHighlightsSection highlights={monthly} />
 
       {/* Community vitals */}
       <section className="space-y-3">
@@ -471,6 +479,214 @@ function ActivityItem({
         <p className="mt-0.5 text-xs text-(--text-3)">{time}</p>
       </div>
     </div>
+  );
+}
+
+const DATE_FORMATTER = new Intl.DateTimeFormat("en-GB", {
+  weekday: "short",
+  day: "numeric",
+  month: "short",
+});
+
+const TIME_FORMATTER = new Intl.DateTimeFormat("en-GB", {
+  hour: "numeric",
+  minute: "2-digit",
+});
+
+function formatEventDate(value: Date): string {
+  return `${DATE_FORMATTER.format(value)} · ${TIME_FORMATTER.format(value)}`;
+}
+
+function eventLocation(ev: MonthlyEvent): string {
+  if (ev.isOnline) return "Online";
+  if (ev.locationName && ev.locationCity)
+    return `${ev.locationName}, ${ev.locationCity}`;
+  return ev.locationName ?? ev.locationCity ?? "Location to be confirmed";
+}
+
+function milestoneLabel(type: MonthlyElectionMilestone["type"]): string {
+  if (type === "nominations_close") return "Nominations close";
+  if (type === "voting_opens") return "Voting opens";
+  return "Voting closes";
+}
+
+function formatCurrency(amount: bigint): string {
+  const value = Number(amount);
+  if (!Number.isFinite(value)) return "—";
+  if (value >= 1_000_000) {
+    return `UGX ${(value / 1_000_000).toFixed(1)}M`;
+  }
+  if (value >= 1_000) {
+    return `UGX ${(value / 1_000).toFixed(0)}K`;
+  }
+  return `UGX ${value.toLocaleString()}`;
+}
+
+function MonthlyHighlightsSection({
+  highlights,
+}: {
+  highlights: MonthlyHighlights;
+}) {
+  const isEmpty =
+    highlights.events.length === 0 &&
+    highlights.electionMilestones.length === 0 &&
+    highlights.campaigns.length === 0;
+
+  return (
+    <section className="space-y-3">
+      <header className="flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <h2 className="font-[family-name:var(--font-ui)] text-base font-semibold text-(--navy-900)">
+            What&apos;s happening this month
+          </h2>
+          <p className="text-xs text-(--text-3)">
+            Events, deadlines, and campaigns in {highlights.monthLabel}.
+          </p>
+        </div>
+      </header>
+
+      {isEmpty ? (
+        <Card>
+          <CardContent className="py-6 text-center text-sm text-(--text-3)">
+            Nothing scheduled for {highlights.monthLabel} just yet — check back
+            soon.
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4 lg:grid-cols-3">
+          <Card className={highlights.events.length === 0 ? "" : "lg:col-span-2"}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CalendarCheck2 className="size-4 text-(--navy-500)" /> Events
+              </CardTitle>
+              <CardDescription>
+                Coming up across the community.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {highlights.events.length > 0 ? (
+                highlights.events.map((ev) => (
+                  <Link
+                    key={ev.id}
+                    href={`/events/${ev.slug}`}
+                    className="flex items-start gap-3 rounded-(--r-md) border border-(--border) bg-(--white) px-3 py-2.5 transition hover:border-(--navy-200) hover:bg-(--navy-50)"
+                  >
+                    <span className="mt-0.5 inline-flex size-9 shrink-0 flex-col items-center justify-center rounded-(--r-md) bg-(--navy-50) text-(--navy-700)">
+                      <span className="text-[10px] leading-none uppercase">
+                        {ev.startAt.toLocaleString("en-US", { month: "short" })}
+                      </span>
+                      <span className="text-sm font-semibold leading-none">
+                        {ev.startAt.getDate()}
+                      </span>
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-(--navy-900)">
+                        {ev.title}
+                      </p>
+                      <p className="mt-0.5 text-xs text-(--text-3)">
+                        {formatEventDate(ev.startAt)} · {eventLocation(ev)}
+                      </p>
+                    </div>
+                  </Link>
+                ))
+              ) : (
+                <p className="rounded-(--r-md) bg-(--surface) px-3 py-3 text-sm text-(--text-3)">
+                  No published events this month yet.
+                </p>
+              )}
+              {highlights.events.length > 0 ? (
+                <Link
+                  href="/events"
+                  className="inline-flex items-center gap-1 pt-1 text-xs font-medium text-(--navy-700) hover:underline"
+                >
+                  See all events <ArrowRight className="size-3" />
+                </Link>
+              ) : null}
+            </CardContent>
+          </Card>
+
+          <div className="space-y-4">
+            {highlights.electionMilestones.length > 0 ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Vote className="size-4 text-(--navy-700)" /> Election dates
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {highlights.electionMilestones.map((milestone) => (
+                    <Link
+                      key={milestone.id}
+                      href={
+                        milestone.type === "nominations_close"
+                          ? "/voting"
+                          : `/voting/elections/${milestone.cycleId}`
+                      }
+                      className="flex items-start gap-3 rounded-(--r-md) bg-(--surface) px-3 py-2 transition hover:bg-(--navy-50)"
+                    >
+                      <span className="mt-0.5 inline-flex size-8 shrink-0 flex-col items-center justify-center rounded-(--r-md) bg-(--white) text-(--navy-700)">
+                        <span className="text-sm font-semibold leading-none">
+                          {milestone.at.getDate()}
+                        </span>
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-(--navy-900)">
+                          {milestoneLabel(milestone.type)}
+                        </p>
+                        <p className="truncate text-xs text-(--text-3)">
+                          {milestone.cycleTitle}
+                        </p>
+                      </div>
+                      <p className="shrink-0 text-xs text-(--text-3)">
+                        {TIME_FORMATTER.format(milestone.at)}
+                      </p>
+                    </Link>
+                  ))}
+                </CardContent>
+              </Card>
+            ) : null}
+
+            {highlights.campaigns.length > 0 ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <HeartHandshake className="size-4 text-(--gold-500)" /> Giving
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {highlights.campaigns.map((campaign) => (
+                    <Link
+                      key={campaign.id}
+                      href={`/donate/${campaign.slug}`}
+                      className="block rounded-(--r-md) bg-(--surface) px-3 py-2 transition hover:bg-(--navy-50)"
+                    >
+                      <p className="truncate text-sm font-medium text-(--navy-900)">
+                        {campaign.title}
+                      </p>
+                      <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-(--white)">
+                        <div
+                          className="h-full rounded-full bg-(--gold-500)"
+                          style={{
+                            width: `${Math.max(2, campaign.progressPercent ?? 0)}%`,
+                          }}
+                        />
+                      </div>
+                      <p className="mt-1 text-xs text-(--text-3)">
+                        {formatCurrency(campaign.raisedAmount)} raised of{" "}
+                        {formatCurrency(campaign.goalAmount)}
+                        {campaign.progressPercent !== null
+                          ? ` · ${campaign.progressPercent}%`
+                          : ""}
+                      </p>
+                    </Link>
+                  ))}
+                </CardContent>
+              </Card>
+            ) : null}
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
 
