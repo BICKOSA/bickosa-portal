@@ -1,26 +1,35 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 
 import { VotingBanner } from "@/components/voting/voting-banner";
 import { db } from "@/lib/db";
 import { electionCycles, generalPolls } from "@/lib/db/schema";
 
+type CycleStatus = "nominations_open" | "voting_open";
+
+function formatList(titles: string[]): string {
+  if (titles.length === 1) return titles[0];
+  if (titles.length === 2) return `${titles[0]} and ${titles[1]}`;
+  return `${titles.slice(0, -1).join(", ")}, and ${titles[titles.length - 1]}`;
+}
+
 export async function ActiveVotingBanner() {
-  let cycleCount = 0;
+  let cycles: Array<{ id: string; title: string; status: CycleStatus }> = [];
   let pollCount = 0;
-  let bannerKey = "none";
 
   try {
     const now = new Date();
-    const [cycles, polls] = await Promise.all([
+    const [cycleRows, polls] = await Promise.all([
       db
         .select({
           id: electionCycles.id,
+          title: electionCycles.title,
           status: electionCycles.status,
         })
         .from(electionCycles)
         .where(
           inArray(electionCycles.status, ["nominations_open", "voting_open"]),
-        ),
+        )
+        .orderBy(asc(electionCycles.votingOpens)),
       db
         .select({ id: generalPolls.id })
         .from(generalPolls)
@@ -33,47 +42,56 @@ export async function ActiveVotingBanner() {
         ),
     ]);
 
-    cycleCount = cycles.length;
+    cycles = cycleRows.filter(
+      (row): row is { id: string; title: string; status: CycleStatus } =>
+        row.status === "nominations_open" || row.status === "voting_open",
+    );
     pollCount = polls.length;
-
-    const cycleKey = cycles
-      .map((c) => `${c.id}:${c.status}`)
-      .sort()
-      .join("|");
-    const pollKey = polls
-      .map((p) => p.id)
-      .sort()
-      .join("|");
-    bannerKey = `${cycleKey}#${pollKey}` || "none";
   } catch {
-    /* DB unavailable — render nothing rather than break the layout. */
     return null;
   }
 
-  if (cycleCount === 0 && pollCount === 0) {
+  if (cycles.length === 0 && pollCount === 0) {
     return null;
   }
 
-  const parts: string[] = [];
-  if (cycleCount > 0) {
-    parts.push(
-      cycleCount === 1
-        ? "An election is open"
-        : `${cycleCount} elections are open`,
+  const nominationsCycles = cycles.filter((c) => c.status === "nominations_open");
+  const votingCycles = cycles.filter((c) => c.status === "voting_open");
+
+  const sentences: string[] = [];
+  if (nominationsCycles.length > 0) {
+    sentences.push(
+      `Nominations are open for ${formatList(nominationsCycles.map((c) => c.title))}`,
+    );
+  }
+  if (votingCycles.length > 0) {
+    sentences.push(
+      `Voting is open for ${formatList(votingCycles.map((c) => c.title))}`,
     );
   }
   if (pollCount > 0) {
-    parts.push(
-      pollCount === 1 ? "a poll needs your vote" : `${pollCount} polls need your vote`,
+    sentences.push(
+      pollCount === 1 ? "a community poll needs your vote" : `${pollCount} community polls need your vote`,
     );
   }
-  const message = `${parts.join(" and ")}.`;
+  const message = `${sentences.join(" · ")}.`;
+
+  const ctaLabel =
+    votingCycles.length > 0 || pollCount > 0
+      ? "Cast your vote →"
+      : "Submit a nomination →";
+
+  const bannerKey =
+    cycles
+      .map((c) => `${c.id}:${c.status}`)
+      .sort()
+      .join("|") + `#polls:${pollCount}`;
 
   return (
     <VotingBanner
       storageKey={`bickosa.votingBannerDismissed:${bannerKey}`}
       message={message}
-      ctaLabel="Cast your vote →"
+      ctaLabel={ctaLabel}
       ctaHref="/voting"
     />
   );
