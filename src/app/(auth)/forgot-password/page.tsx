@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,6 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { AuthPageShell } from "@/components/auth/auth-page-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useRawReturnTo, withReturnTo } from "@/lib/auth/return-to";
 
 const forgotPasswordSchema = z.object({
   email: z.email("Enter a valid email address."),
@@ -16,9 +17,10 @@ const forgotPasswordSchema = z.object({
 
 type ForgotPasswordValues = z.infer<typeof forgotPasswordSchema>;
 
-export default function ForgotPasswordPage() {
+function ForgotPasswordPageContent() {
   const [message, setMessage] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const rawReturnTo = useRawReturnTo();
 
   const {
     register,
@@ -89,11 +91,22 @@ export default function ForgotPasswordPage() {
 
         <p className="text-center text-sm text-[var(--text-2)]">
           Back to{" "}
-          <Link href="/login" className="font-medium text-[var(--navy-700)] underline">
+          <Link
+            href={withReturnTo("/login", rawReturnTo)}
+            className="font-medium text-[var(--navy-700)] underline"
+          >
             Sign in
           </Link>
         </p>
       </div>
     </AuthPageShell>
+  );
+}
+
+export default function ForgotPasswordPage() {
+  return (
+    <Suspense fallback={null}>
+      <ForgotPasswordPageContent />
+    </Suspense>
   );
 }

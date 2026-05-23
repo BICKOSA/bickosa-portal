@@ -78,6 +78,12 @@ export function JoinRegistrationForm() {
   const [step, setStep] = useState(0);
   const [formError, setFormError] = useState<string | null>(null);
   const referralCode = searchParams.get("ref")?.trim() ?? "";
+  const returnToParam = searchParams.get("returnTo")?.trim() ?? "";
+  const hasSafeReturnTo =
+    returnToParam.startsWith("/") && !returnToParam.startsWith("//");
+  const returnToQuery = hasSafeReturnTo
+    ? `&returnTo=${encodeURIComponent(returnToParam)}`
+    : "";
 
   const yearOptions = useMemo(() => {
     const current = new Date().getFullYear();
@@ -203,7 +209,9 @@ export function JoinRegistrationForm() {
       return;
     }
 
-    router.push(`/join/success?email=${encodeURIComponent(values.email)}`);
+    router.push(
+      `/join/success?email=${encodeURIComponent(values.email)}${returnToQuery}`,
+    );
   };
 
   return (
@@ -435,7 +443,7 @@ export function JoinRegistrationForm() {
       <p className="text-center text-sm text-[var(--text-2)]">
         Already registered?{" "}
         <Link
-          href="/login"
+          href={hasSafeReturnTo ? `/login?returnTo=${encodeURIComponent(returnToParam)}` : "/login"}
           className="font-medium text-[var(--navy-700)] underline"
         >
           Sign in

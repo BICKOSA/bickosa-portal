@@ -10,6 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { AuthPageShell } from "@/components/auth/auth-page-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useRawReturnTo, withReturnTo } from "@/lib/auth/return-to";
 
 const resetPasswordSchema = z
   .object({
@@ -27,6 +28,7 @@ function ResetPasswordPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
+  const rawReturnTo = useRawReturnTo();
 
   const [message, setMessage] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -71,7 +73,7 @@ function ResetPasswordPageContent() {
 
     setMessage("Password updated successfully. Redirecting to login...");
     setTimeout(() => {
-      router.push("/login");
+      router.push(withReturnTo("/login", rawReturnTo));
     }, 1000);
   };
 
@@ -111,7 +113,10 @@ function ResetPasswordPageContent() {
 
         <p className="text-center text-sm text-[var(--text-2)]">
           Back to{" "}
-          <Link href="/login" className="font-medium text-[var(--navy-700)] underline">
+          <Link
+            href={withReturnTo("/login", rawReturnTo)}
+            className="font-medium text-[var(--navy-700)] underline"
+          >
             Login
           </Link>
         </p>

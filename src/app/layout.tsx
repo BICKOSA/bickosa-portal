@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Suspense } from "react";
 import { Geist } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
+import { ActiveVotingBanner } from "@/components/voting/active-voting-banner";
 import { cn } from "@/lib/utils";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
@@ -44,6 +46,9 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased">
+        <Suspense fallback={null}>
+          <ActiveVotingBanner />
+        </Suspense>
         {children}
         <Analytics />
       </body>

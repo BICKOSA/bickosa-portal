@@ -13,6 +13,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { trackPortalEventClient } from "@/lib/analytics/client";
 import { authClient } from "@/lib/auth/auth-client";
+import {
+  clearStoredReturnTo,
+  useRawReturnTo,
+  useReturnTo,
+  withReturnTo,
+} from "@/lib/auth/return-to";
 
 const loginSchema = z.object({
   email: z.email("Enter a valid email address."),
@@ -67,21 +73,14 @@ function LinkedInLogo() {
   );
 }
 
-function normalizeReturnTo(returnTo: string | null): string {
-  if (!returnTo || !returnTo.startsWith("/") || returnTo.startsWith("//")) {
-    return "/dashboard";
-  }
-
-  const normalized = returnTo.replace(/^\/portal(?=\/|$)/, "");
-  return normalized || "/dashboard";
-}
-
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [formError, setFormError] = useState<string | null>(null);
   const [busyProvider, setBusyProvider] = useState<SocialProvider | null>(null);
   const oauthError = searchParams.get("error");
+  const resolvedReturnTo = useReturnTo();
+  const rawReturnTo = useRawReturnTo();
 
   const {
     register,
@@ -128,15 +127,15 @@ function LoginPageContent() {
       },
     });
 
-    const returnTo = normalizeReturnTo(searchParams.get("returnTo"));
-    router.push(returnTo);
+    clearStoredReturnTo();
+    router.push(resolvedReturnTo);
   };
 
   const handleSocialSignIn = async (provider: SocialProvider) => {
     setFormError(null);
     setBusyProvider(provider);
 
-    const returnTo = normalizeReturnTo(searchParams.get("returnTo"));
+    const returnTo = resolvedReturnTo;
 
     await trackPortalEventClient({
       event: "user_login",
@@ -144,6 +143,8 @@ function LoginPageContent() {
         method: provider,
       },
     }).catch(() => undefined);
+
+    clearStoredReturnTo();
 
     const result = await authClient.signIn.social({
       provider,
@@ -231,7 +232,7 @@ function LoginPageContent() {
             </label>
 
             <Link
-              href="/forgot-password"
+              href={withReturnTo("/forgot-password", rawReturnTo)}
               className="text-sm text-[var(--navy-700)] underline"
             >
               Forgot password?
@@ -260,7 +261,7 @@ function LoginPageContent() {
         <p className="rounded-[var(--r-lg)] bg-[var(--navy-50)] px-4 py-3 text-center text-sm text-[var(--text-2)]">
           No account yet?{" "}
           <Link
-            href="/register"
+            href={withReturnTo("/register", rawReturnTo)}
             className="font-medium text-[var(--navy-700)] underline"
           >
             Register

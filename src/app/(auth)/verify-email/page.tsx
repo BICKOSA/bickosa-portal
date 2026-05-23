@@ -8,12 +8,20 @@ import { AuthPageShell } from "@/components/auth/auth-page-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { trackPortalEventClient } from "@/lib/analytics/client";
+import {
+  clearStoredReturnTo,
+  useRawReturnTo,
+  useReturnTo,
+  withReturnTo,
+} from "@/lib/auth/return-to";
 
 type VerifyState = "pending" | "verifying" | "verified" | "error";
 
 function VerifyEmailPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const resolvedReturnTo = useReturnTo();
+  const rawReturnTo = useRawReturnTo();
   const [email, setEmail] = useState(searchParams.get("email") ?? "");
   const [state, setState] = useState<VerifyState>("pending");
   const [message, setMessage] = useState<string | null>(null);
@@ -45,7 +53,8 @@ function VerifyEmailPageContent() {
           | null;
 
         if (payload?.user) {
-          router.replace("/dashboard");
+          clearStoredReturnTo();
+          router.replace(resolvedReturnTo);
           return;
         }
 
@@ -96,7 +105,7 @@ function VerifyEmailPageContent() {
     return () => {
       cancelled = true;
     };
-  }, [error, router, token, verified]);
+  }, [error, resolvedReturnTo, router, token, verified]);
 
   const resendVerificationEmail = async () => {
     if (!email) {
@@ -166,7 +175,10 @@ function VerifyEmailPageContent() {
 
         <p className="text-center text-sm text-[var(--text-2)]">
           Continue to{" "}
-          <Link href="/login" className="font-medium text-[var(--navy-700)] underline">
+          <Link
+            href={withReturnTo("/login", rawReturnTo)}
+            className="font-medium text-[var(--navy-700)] underline"
+          >
             Login
           </Link>
         </p>

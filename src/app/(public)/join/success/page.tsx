@@ -2,7 +2,24 @@ import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 
-export default function JoinSuccessPage() {
+type JoinSuccessPageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function JoinSuccessPage({
+  searchParams,
+}: JoinSuccessPageProps) {
+  const params = await searchParams;
+  const raw = params.returnTo;
+  const returnTo = Array.isArray(raw) ? raw[0] : raw;
+  const safeReturnTo =
+    returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")
+      ? returnTo
+      : null;
+  const loginHref = safeReturnTo
+    ? `/login?returnTo=${encodeURIComponent(safeReturnTo)}`
+    : "/login";
+
   return (
     <main className="min-h-screen bg-[var(--white)] px-4 py-14">
       <section className="mx-auto max-w-[640px] rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--white)] p-8 shadow-[var(--shadow-sm)]">
@@ -37,7 +54,7 @@ export default function JoinSuccessPage() {
 
         <div className="mt-6 flex flex-wrap gap-3">
           <Button asChild variant="navy">
-            <Link href="/login">Go to Login</Link>
+            <Link href={loginHref}>Go to Login</Link>
           </Button>
         </div>
       </section>
