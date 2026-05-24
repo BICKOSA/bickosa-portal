@@ -23,6 +23,7 @@ export type VotingHubElection = {
   hasVotedAllPositions: boolean;
   positionsCount: number;
   votesCastCount: number;
+  liveStreamUrl: string | null;
 };
 
 export type VotingHubPoll = {
@@ -100,6 +101,7 @@ export async function getVotingHubData(userId: string): Promise<{
         hasVotedAllPositions: positionsCount > 0 && votesCastCount >= positionsCount,
         positionsCount,
         votesCastCount,
+        liveStreamUrl: cycle.liveStreamUrl ?? null,
       };
     }),
     polls: polls.map((poll) => ({
@@ -401,6 +403,7 @@ export type ElectionCandidatesPageData = {
     votingOpens: Date;
     votingCloses: Date;
     resultsPublished: boolean;
+    liveStreamUrl: string | null;
   };
   positions: ElectionCandidatesPositionGroup[];
   showVoteCounts: boolean;
@@ -575,6 +578,7 @@ export async function getElectionCandidatesPageData(
       votingOpens: cycle.votingOpens,
       votingCloses: cycle.votingCloses,
       resultsPublished: cycle.resultsPublished,
+      liveStreamUrl: cycle.liveStreamUrl ?? null,
     },
     positions: groups,
     showVoteCounts,

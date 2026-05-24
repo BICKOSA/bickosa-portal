@@ -5,7 +5,7 @@ import { format } from "date-fns";
 
 import { ElectionBallotClient } from "@/app/(portal)/voting/_components/election-ballot-client";
 import { ElectionNominationsClient } from "@/app/(portal)/voting/_components/election-nominations-client";
-import { Award, Users } from "lucide-react";
+import { Award, PlayCircle, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -84,6 +84,17 @@ export default async function ElectionCyclePage({ params }: PageProps) {
                 <Link href={`/voting/results/${data.cycle.id}`}>
                   <Award className="size-4" /> Results
                 </Link>
+              </Button>
+            ) : null}
+            {data.cycle.liveStreamUrl ? (
+              <Button asChild variant="gold" size="sm">
+                <a
+                  href={data.cycle.liveStreamUrl}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  <PlayCircle className="size-4" /> Watch live
+                </a>
               </Button>
             ) : null}
           </div>

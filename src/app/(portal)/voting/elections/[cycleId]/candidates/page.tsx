@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, Award, Vote } from "lucide-react";
+import { ArrowLeft, Award, PlayCircle, Vote } from "lucide-react";
 
 import { CountdownText } from "@/app/(portal)/voting/_components/countdown-text";
 import { PageHeader } from "@/components/layout/page-header";
@@ -112,6 +112,17 @@ export default async function ElectionCandidatesPage({ params }: PageProps) {
                 <Link href={`/voting/results/${data.cycle.id}`}>
                   <Award className="size-4" /> View results
                 </Link>
+              </Button>
+            ) : null}
+            {data.cycle.liveStreamUrl ? (
+              <Button asChild variant="gold" size="sm">
+                <a
+                  href={data.cycle.liveStreamUrl}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  <PlayCircle className="size-4" /> Watch live
+                </a>
               </Button>
             ) : null}
           </div>

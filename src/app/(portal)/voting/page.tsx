@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { CheckCircle2, Users, Vote } from "lucide-react";
+import { CheckCircle2, PlayCircle, Users, Vote } from "lucide-react";
 
 import { CountdownText } from "@/app/(portal)/voting/_components/countdown-text";
 import { PageHeader } from "@/components/layout/page-header";
@@ -84,6 +84,17 @@ export default async function VotingHubPage() {
                           <Users className="size-4" /> Candidates
                         </Link>
                       </Button>
+                      {cycle.liveStreamUrl ? (
+                        <Button asChild variant="gold" size="sm">
+                          <a
+                            href={cycle.liveStreamUrl}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                          >
+                            <PlayCircle className="size-4" /> Watch live
+                          </a>
+                        </Button>
+                      ) : null}
                     </div>
                   </div>
                 );

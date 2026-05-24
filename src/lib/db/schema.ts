@@ -974,6 +974,7 @@ export const electionCycles = pgTable(
     resultsPublished: boolean("results_published").default(false).notNull(),
     status: electionCycleStatusEnum("status").default("draft").notNull(),
     quorumPercent: integer("quorum_percent").default(25).notNull(),
+    liveStreamUrl: text("live_stream_url"),
     createdBy: uuid("created_by").references(() => users.id),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
