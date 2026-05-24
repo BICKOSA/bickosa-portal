@@ -1396,6 +1396,100 @@ export const agmPetitions = pgTable(
   }),
 );
 
+export const announcementAudienceEnum = pgEnum("announcement_audience", [
+  "all_members",
+  "verified_only",
+  "chapter",
+  "admins",
+]);
+
+export const announcementChannelEnum = pgEnum("announcement_channel", [
+  "email",
+  "sms",
+  "in_app",
+]);
+
+export const announcementStatusEnum = pgEnum("announcement_status", [
+  "draft",
+  "sending",
+  "sent",
+  "partial",
+  "failed",
+]);
+
+export const announcementDeliveryStatusEnum = pgEnum(
+  "announcement_delivery_status",
+  ["pending", "sent", "failed", "skipped"],
+);
+
+export const announcements = pgTable(
+  "announcements",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    title: varchar("title", { length: 255 }).notNull(),
+    summary: varchar("summary", { length: 500 }),
+    body: text("body").notNull(),
+    ctaLabel: varchar("cta_label", { length: 80 }),
+    ctaUrl: text("cta_url"),
+    audience: announcementAudienceEnum("audience").notNull(),
+    chapterId: uuid("chapter_id").references(() => chapters.id, {
+      onDelete: "set null",
+    }),
+    channels: text("channels")
+      .array()
+      .default(sql`ARRAY['email']::text[]`)
+      .notNull(),
+    status: announcementStatusEnum("status").default("draft").notNull(),
+    recipientCount: integer("recipient_count").default(0).notNull(),
+    successCount: integer("success_count").default(0).notNull(),
+    failureCount: integer("failure_count").default(0).notNull(),
+    createdById: uuid("created_by_id")
+      .notNull()
+      .references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => ({
+    statusIdx: index("announcements_status_idx").on(table.status),
+    createdAtIdx: index("announcements_created_at_idx").on(table.createdAt),
+  }),
+);
+
+export const announcementDeliveries = pgTable(
+  "announcement_deliveries",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    announcementId: uuid("announcement_id")
+      .notNull()
+      .references(() => announcements.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    channel: announcementChannelEnum("channel").notNull(),
+    status: announcementDeliveryStatusEnum("status").default("pending").notNull(),
+    providerRef: varchar("provider_ref", { length: 255 }),
+    errorMessage: text("error_message"),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => ({
+    announcementUserChannelUnique: uniqueIndex(
+      "announcement_deliveries_announcement_user_channel_unique",
+    ).on(table.announcementId, table.userId, table.channel),
+    announcementIdx: index("announcement_deliveries_announcement_idx").on(
+      table.announcementId,
+    ),
+    userIdx: index("announcement_deliveries_user_idx").on(table.userId),
+  }),
+);
+
 export type User = InferSelectModel<typeof users>;
 export type NewUser = InferInsertModel<typeof users>;
 export type Session = InferSelectModel<typeof sessions>;
@@ -1520,3 +1614,7 @@ export type AmendmentComment = InferSelectModel<typeof amendmentComments>;
 export type NewAmendmentComment = InferInsertModel<typeof amendmentComments>;
 export type AgmPetition = InferSelectModel<typeof agmPetitions>;
 export type NewAgmPetition = InferInsertModel<typeof agmPetitions>;
+export type Announcement = InferSelectModel<typeof announcements>;
+export type NewAnnouncement = InferInsertModel<typeof announcements>;
+export type AnnouncementDelivery = InferSelectModel<typeof announcementDeliveries>;
+export type NewAnnouncementDelivery = InferInsertModel<typeof announcementDeliveries>;

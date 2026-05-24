@@ -1,4 +1,8 @@
 export {
+  AnnouncementTemplate,
+  type AnnouncementTemplateProps,
+} from "@/lib/email/templates/announcement";
+export {
   DonationReceiptTemplate,
   type DonationReceiptTemplateProps,
 } from "@/lib/email/templates/donation-receipt";

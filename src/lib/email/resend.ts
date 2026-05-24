@@ -2,6 +2,8 @@ import { createElement, type ReactElement } from "react";
 import { Resend } from "resend";
 
 import {
+  AnnouncementTemplate,
+  type AnnouncementTemplateProps,
   DonationReceiptTemplate,
   type DonationReceiptTemplateProps,
   EventReminderTemplate,
@@ -258,6 +260,51 @@ export function sendMentorshipRequestEmail(input: SendMentorshipRequestEmailInpu
       requestUrl: input.requestUrl,
     }),
     text: `${input.requesterName} has sent you a mentorship request. View request: ${input.requestUrl}`,
+  });
+}
+
+export type SendAnnouncementEmailInput = {
+  to: string;
+  title: AnnouncementTemplateProps["title"];
+  summary?: AnnouncementTemplateProps["summary"];
+  body: AnnouncementTemplateProps["body"];
+  ctaLabel?: AnnouncementTemplateProps["ctaLabel"];
+  ctaUrl?: AnnouncementTemplateProps["ctaUrl"];
+  authorName?: AnnouncementTemplateProps["authorName"];
+  recipientName?: AnnouncementTemplateProps["recipientName"];
+  preferencesUrl?: AnnouncementTemplateProps["preferencesUrl"];
+  /** Override the subject line if you want something different from the title. */
+  subject?: string;
+};
+
+export async function sendAnnouncementEmail(input: SendAnnouncementEmailInput) {
+  const preferencesUrl =
+    input.preferencesUrl ?? `${appUrl}/settings/privacy`;
+  const subject = input.subject ?? input.title;
+
+  return sendEmail({
+    to: input.to,
+    subject,
+    react: createElement(AnnouncementTemplate, {
+      title: input.title,
+      summary: input.summary ?? null,
+      body: input.body,
+      ctaLabel: input.ctaLabel ?? null,
+      ctaUrl: input.ctaUrl ?? null,
+      authorName: input.authorName ?? null,
+      preferencesUrl,
+      recipientName: input.recipientName ?? null,
+    }),
+    text: [
+      input.title,
+      input.summary ?? null,
+      input.body,
+      input.ctaLabel && input.ctaUrl
+        ? `${input.ctaLabel}: ${input.ctaUrl}`
+        : null,
+    ]
+      .filter(Boolean)
+      .join("\n\n"),
   });
 }
 

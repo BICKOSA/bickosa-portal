@@ -30,6 +30,7 @@ export const notificationTypes = [
   "constitution_amendment_open_for_comment",
   "constitution_comment_deadline_reminder",
   "constitution_outcome_recorded",
+  "announcement",
 ] as const;
 
 export type NotificationType = (typeof notificationTypes)[number];
@@ -56,6 +57,7 @@ export const notificationTitleTemplates: Record<NotificationType, string> = {
   constitution_amendment_open_for_comment: "Constitution amendment open for comment",
   constitution_comment_deadline_reminder: "Comment deadline approaching",
   constitution_outcome_recorded: "Constitution amendment outcome recorded",
+  announcement: "[Title]",
 };
 
 export type CreateNotificationInput = {
