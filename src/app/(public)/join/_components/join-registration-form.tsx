@@ -6,10 +6,17 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Info } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const PHONE_REGEX = /^\+?[0-9()\-\s]{7,20}$/;
 const LINKEDIN_URL_REGEX = /linkedin\.com\//i;
@@ -127,6 +134,58 @@ function RequiredLabel({ children }: { children: React.ReactNode }) {
       </span>
       <span className="sr-only"> (required)</span>
     </>
+  );
+}
+
+function FieldHint({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <button
+            type="button"
+            aria-label={label}
+            className="inline-flex size-4 items-center justify-center rounded-full text-[var(--text-3)] transition hover:text-[var(--navy-700)] focus:text-[var(--navy-700)] focus:outline-none"
+          >
+            <Info aria-hidden="true" className="size-3.5" />
+          </button>
+        }
+      />
+      <TooltipContent className="max-w-[260px] text-left leading-snug">
+        {children}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+type LabelWithHintProps = {
+  children: React.ReactNode;
+  hint?: React.ReactNode;
+  required?: boolean;
+  hintAriaLabel?: string;
+};
+
+function LabelWithHint({
+  children,
+  hint,
+  required,
+  hintAriaLabel,
+}: LabelWithHintProps) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span>{children}</span>
+      {required ? (
+        <span aria-hidden="true" className="text-[var(--error)]">
+          *
+        </span>
+      ) : null}
+      {required ? <span className="sr-only"> (required)</span> : null}
+      {hint ? (
+        <FieldHint label={hintAriaLabel ?? `More about ${typeof children === "string" ? children : "this field"}`}>
+          {hint}
+        </FieldHint>
+      ) : null}
+    </span>
   );
 }
 
@@ -282,6 +341,7 @@ export function JoinRegistrationForm() {
   };
 
   return (
+    <TooltipProvider delay={150}>
     <form
       onSubmit={handleSubmit(onSubmit)}
       className="space-y-4 rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--white)] p-6 shadow-[var(--shadow-sm)]"
@@ -302,7 +362,14 @@ export function JoinRegistrationForm() {
         <>
           <div className="grid gap-3 md:grid-cols-2">
             <Input
-              label={<RequiredLabel>Full name</RequiredLabel>}
+              label={
+                <LabelWithHint
+                  required
+                  hint="Use the name on your school records. If you've changed your name since BCK, put the school-record name first."
+                >
+                  Full name
+                </LabelWithHint>
+              }
               autoComplete="name"
               placeholder="e.g. Mary Nakato"
               {...register("fullName")}
@@ -310,7 +377,14 @@ export function JoinRegistrationForm() {
               helperText="First and last name as on your records."
             />
             <Input
-              label={<RequiredLabel>Email</RequiredLabel>}
+              label={
+                <LabelWithHint
+                  required
+                  hint="We send a verification link here and you'll use it to sign in. Personal addresses work better than work ones."
+                >
+                  Email
+                </LabelWithHint>
+              }
               type="email"
               autoComplete="email"
               {...register("email")}
@@ -318,7 +392,14 @@ export function JoinRegistrationForm() {
               helperText="Used to sign in and recover your account."
             />
             <Input
-              label={<RequiredLabel>Password</RequiredLabel>}
+              label={
+                <LabelWithHint
+                  required
+                  hint="8–72 characters with at least one letter and one number. We hash it; nobody (not even admins) sees the original."
+                >
+                  Password
+                </LabelWithHint>
+              }
               type="password"
               autoComplete="new-password"
               {...register("password")}
@@ -333,7 +414,14 @@ export function JoinRegistrationForm() {
               error={errors.confirmPassword?.message}
             />
             <Input
-              label={<RequiredLabel>Phone</RequiredLabel>}
+              label={
+                <LabelWithHint
+                  required
+                  hint="Add the country code (e.g. +256 for Uganda). Used for chapter outreach and, later, SMS alerts. Your number is private by default."
+                >
+                  Phone
+                </LabelWithHint>
+              }
               type="tel"
               autoComplete="tel"
               placeholder="e.g. +256 772 000 000"
@@ -343,7 +431,12 @@ export function JoinRegistrationForm() {
             />
             <label className="flex flex-col gap-1.5 text-sm font-medium text-[var(--text-1)]">
               <span>
-                <RequiredLabel>Graduation year</RequiredLabel>
+                <LabelWithHint
+                  required
+                  hint="The year you completed your final year at Bishop Cipriano Kihangire (usually S6, or S4 if you left after O-level)."
+                >
+                  Graduation year
+                </LabelWithHint>
               </span>
               <select
                 {...register("graduationYear", { valueAsNumber: true })}
@@ -362,13 +455,25 @@ export function JoinRegistrationForm() {
               ) : null}
             </label>
             <Input
-              label="Stream (optional)"
+              label={
+                <LabelWithHint
+                  hint="Your academic class group in upper school — e.g. PCM, PCB, MEG, HEG."
+                >
+                  Stream <span className="text-[var(--text-3)]">(optional)</span>
+                </LabelWithHint>
+              }
               {...register("stream")}
               error={errors.stream?.message}
               helperText="e.g. Sciences, Arts."
             />
             <Input
-              label="House (optional)"
+              label={
+                <LabelWithHint
+                  hint="The boarding or competition house you belonged to at BCK — used during sports events and alumni reunions."
+                >
+                  House <span className="text-[var(--text-3)]">(optional)</span>
+                </LabelWithHint>
+              }
               {...register("house")}
               error={errors.house?.message}
             />
@@ -376,7 +481,12 @@ export function JoinRegistrationForm() {
 
           <label className="flex flex-col gap-1.5 text-sm font-medium text-[var(--text-1)]">
             <span>
-              <RequiredLabel>Name a teacher or classmate you remember</RequiredLabel>
+              <LabelWithHint
+                required
+                hint="Helps our verification team match you to the school's records. One familiar name is enough — a class teacher, prefect, sports captain, or close friend."
+              >
+                Name a teacher or classmate you remember
+              </LabelWithHint>
             </span>
             <textarea
               {...register("notableTeachers")}
@@ -403,7 +513,14 @@ export function JoinRegistrationForm() {
         <>
           <div className="grid gap-3 md:grid-cols-2">
             <Input
-              label={<RequiredLabel>Current location</RequiredLabel>}
+              label={
+                <LabelWithHint
+                  required
+                  hint="Where you live now (or where you spend most of your time). We use this to suggest a regional alumni chapter near you."
+                >
+                  Current location
+                </LabelWithHint>
+              }
               autoComplete="address-level2"
               placeholder="e.g. Kampala, Uganda"
               {...register("currentLocation")}
@@ -411,7 +528,14 @@ export function JoinRegistrationForm() {
               helperText="City and country — used to assign you to a chapter."
             />
             <Input
-              label={<RequiredLabel>Occupation</RequiredLabel>}
+              label={
+                <LabelWithHint
+                  required
+                  hint="What you do today — title plus employer/organisation works best. This is what fellow alumni see when looking for mentors or referrals."
+                >
+                  Occupation
+                </LabelWithHint>
+              }
               autoComplete="organization-title"
               placeholder="e.g. Software Engineer at Google"
               {...register("occupation")}
@@ -419,7 +543,13 @@ export function JoinRegistrationForm() {
               helperText="Title and employer help peers find and support each other."
             />
             <Input
-              label="LinkedIn (optional)"
+              label={
+                <LabelWithHint
+                  hint="The public URL to your LinkedIn profile. Shown on your alumni directory entry if you opt in to the directory below."
+                >
+                  LinkedIn <span className="text-[var(--text-3)]">(optional)</span>
+                </LabelWithHint>
+              }
               type="url"
               autoComplete="url"
               placeholder="https://www.linkedin.com/in/your-name"
@@ -429,7 +559,12 @@ export function JoinRegistrationForm() {
             />
             <label className="flex flex-col gap-1.5 text-sm font-medium text-[var(--text-1)]">
               <span>
-                <RequiredLabel>How did you hear about us?</RequiredLabel>
+                <LabelWithHint
+                  required
+                  hint="Helps us understand which channels reach alumni best — and credit referrers. If a friend shared a link, pick that channel."
+                >
+                  How did you hear about us?
+                </LabelWithHint>
               </span>
               <select
                 {...register("howTheyHeard")}
@@ -502,24 +637,39 @@ export function JoinRegistrationForm() {
               </p>
             ) : null}
 
-            <label className="flex items-center gap-2 text-sm text-[var(--text-2)]">
+            <label className="flex items-start gap-2 text-sm text-[var(--text-2)]">
               <Checkbox
                 checked={consentDirectory}
                 onCheckedChange={(checked) =>
                   setValue("consentDirectory", Boolean(checked))
                 }
               />
-              Show my profile in the alumni directory.
+              <span className="inline-flex flex-wrap items-center gap-1.5">
+                Show my profile in the alumni directory.
+                <FieldHint label="What appears in the directory">
+                  Other verified alumni will see your name, graduation year,
+                  current city, occupation, and (if filled) your LinkedIn link.
+                  Your email and phone stay private. You can change this any
+                  time in Settings.
+                </FieldHint>
+              </span>
             </label>
 
-            <label className="flex items-center gap-2 text-sm text-[var(--text-2)]">
+            <label className="flex items-start gap-2 text-sm text-[var(--text-2)]">
               <Checkbox
                 checked={consentNewsletter}
                 onCheckedChange={(checked) =>
                   setValue("consentNewsletter", Boolean(checked))
                 }
               />
-              I consent to receive the monthly newsletter.
+              <span className="inline-flex flex-wrap items-center gap-1.5">
+                I consent to receive the monthly newsletter.
+                <FieldHint label="About the newsletter">
+                  A single roundup each month — upcoming events, election
+                  cycles, new mentorship opportunities, and chapter updates.
+                  Unsubscribe any time from the email footer.
+                </FieldHint>
+              </span>
             </label>
           </div>
         </>
@@ -569,5 +719,6 @@ export function JoinRegistrationForm() {
         </Link>
       </p>
     </form>
+    </TooltipProvider>
   );
 }
