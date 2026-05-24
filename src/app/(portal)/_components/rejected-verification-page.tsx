@@ -1,4 +1,8 @@
 import Image from "next/image";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
 
 type RejectedVerificationPageProps = {
   reason?: string | null;
@@ -45,29 +49,35 @@ export function RejectedVerificationPage({
           <ul className="mt-3 space-y-2 text-sm text-[var(--text-2)]">
             <li className="flex gap-2">
               <span className="mt-0.5 shrink-0 text-[var(--gold-500)]">&bull;</span>
-              Review your profile information and ensure everything is correct.
+              Update your profile with the corrected information — we&apos;ll
+              put you back in the review queue automatically.
             </li>
             <li className="flex gap-2">
               <span className="mt-0.5 shrink-0 text-[var(--gold-500)]">&bull;</span>
-              Provide additional details such as teachers or classmates you
-              remember from school.
+              Add details that help us verify you (graduation year, stream,
+              teachers or classmates you remember).
             </li>
             <li className="flex gap-2">
               <span className="mt-0.5 shrink-0 text-[var(--gold-500)]">&bull;</span>
-              Contact us to discuss your registration.
+              Or contact us if something isn&apos;t adding up.
             </li>
           </ul>
         </div>
 
-        <p className="mt-6 text-xs text-[var(--text-3)]">
-          Please reach out to{" "}
-          <a
-            href="mailto:info@bickosa.com"
-            className="font-medium text-[var(--navy-700)] underline"
-          >
-            info@bickosa.com
-          </a>{" "}
-          and we&apos;ll help resolve this.
+        <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+          <Button asChild variant="gold">
+            <Link href="/profile">
+              Update my profile <ArrowRight className="size-4" />
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <a href="mailto:info@bickosa.com">Contact support</a>
+          </Button>
+        </div>
+
+        <p className="mt-4 text-xs text-[var(--text-3)]">
+          Saving your updated profile re-queues you for review — no need to
+          email us first.
         </p>
       </div>
     </div>

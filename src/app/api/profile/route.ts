@@ -7,7 +7,7 @@ import type { ProfileViewData } from "@/app/(portal)/profile/_components/types";
 import { trackPortalEvent } from "@/lib/analytics/server";
 import { auth } from "@/lib/auth/auth";
 import { db } from "@/lib/db";
-import { alumniProfiles, chapters } from "@/lib/db/schema";
+import { alumniProfiles, chapters, verificationEvents } from "@/lib/db/schema";
 import { buildR2PublicUrl } from "@/lib/r2";
 
 const profilePatchSchema = z
@@ -189,6 +189,14 @@ export async function PATCH(request: Request) {
         updatedAt: now,
       });
     } else {
+      // If the alumni was previously rejected, treat this edit as a
+      // resubmission: move them back into the review queue and log the
+      // event so admins see the trail.
+      const wasRejected = existingProfile.verificationStatus === "rejected";
+      const nextVerificationStatus = wasRejected
+        ? ("pending" as const)
+        : existingProfile.verificationStatus;
+
       await db
         .update(alumniProfiles)
         .set({
@@ -212,6 +220,9 @@ export async function PATCH(request: Request) {
             payload.websiteUrl !== undefined
               ? payload.websiteUrl || null
               : existingProfile.websiteUrl,
+          verificationStatus: nextVerificationStatus,
+          verifiedAt: wasRejected ? null : existingProfile.verifiedAt,
+          verifiedById: wasRejected ? null : existingProfile.verifiedById,
           updatedAt: now,
         })
         .where(
@@ -220,6 +231,17 @@ export async function PATCH(request: Request) {
             eq(alumniProfiles.id, existingProfile.id),
           ),
         );
+
+      if (wasRejected) {
+        await db.insert(verificationEvents).values({
+          alumniProfileId: existingProfile.id,
+          actorId: session.user.id,
+          action: "submitted",
+          notes:
+            "Alumnus updated profile after rejection. Re-queued for review.",
+          createdAt: now,
+        });
+      }
     }
 
     const updatedProfile = await getProfileView(session.user.id);
