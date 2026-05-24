@@ -234,18 +234,26 @@ export default async function GovernancePage() {
               <p className="text-sm text-(--text-2)">{CURRENT_ELECTION_CYCLE}</p>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {leaders.map((leader) => (
-                  <LeaderCard
-                    key={leader.alumniProfileId}
-                    alumniProfileId={leader.alumniProfileId}
-                    fullName={leader.fullName}
-                    role={leader.role}
-                    classYear={leader.classYear}
-                    avatarUrl={leader.avatarUrl}
-                  />
-                ))}
-              </div>
+              {leaders.length === 0 ? (
+                <div className="rounded-(--r-md) border border-dashed border-border bg-(--surface) px-4 py-6 text-center text-sm text-(--text-3)">
+                  No executive committee on record yet. The Current Leadership
+                  section above will populate automatically once an election
+                  publishes results.
+                </div>
+              ) : (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {leaders.map((leader) => (
+                    <LeaderCard
+                      key={leader.alumniProfileId}
+                      alumniProfileId={leader.alumniProfileId}
+                      fullName={leader.fullName}
+                      role={leader.role}
+                      classYear={leader.classYear}
+                      avatarUrl={leader.avatarUrl}
+                    />
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 
