@@ -1,12 +1,16 @@
+import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { format } from "date-fns";
 
 import { ElectionBallotClient } from "@/app/(portal)/voting/_components/election-ballot-client";
 import { ElectionNominationsClient } from "@/app/(portal)/voting/_components/election-nominations-client";
+import { Award, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { auth } from "@/lib/auth/auth";
+import { isAdminUserRole } from "@/lib/auth/roles";
 import { getElectionCyclePageData } from "@/lib/voting";
 
 type PageProps = {
@@ -66,6 +70,23 @@ export default async function ElectionCyclePage({ params }: PageProps) {
             <p>Voting: {formatWindow(data.cycle.votingOpens, data.cycle.votingCloses)}</p>
           </div>
           {data.cycle.description ? <p className="text-sm text-[var(--text-2)]">{data.cycle.description}</p> : null}
+          <div className="flex flex-wrap gap-2 pt-1">
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/voting/elections/${data.cycle.id}/candidates`}>
+                <Users className="size-4" /> Candidates
+              </Link>
+            </Button>
+            {data.cycle.resultsPublished ||
+            data.cycle.status === "voting_closed" ||
+            data.cycle.status === "results_published" ||
+            isAdminUserRole((session.user as { role?: string }).role) ? (
+              <Button asChild variant="navy" size="sm">
+                <Link href={`/voting/results/${data.cycle.id}`}>
+                  <Award className="size-4" /> Results
+                </Link>
+              </Button>
+            ) : null}
+          </div>
         </CardHeader>
         <CardContent>
           {data.cycle.status === "nominations_open" ? (

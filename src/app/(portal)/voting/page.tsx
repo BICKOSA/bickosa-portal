@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { CheckCircle2, Vote } from "lucide-react";
+import { CheckCircle2, Users, Vote } from "lucide-react";
 
 import { CountdownText } from "@/app/(portal)/voting/_components/countdown-text";
 import { PageHeader } from "@/components/layout/page-header";
@@ -68,7 +68,7 @@ export default async function VotingHubPage() {
                       to={isVotingOpen ? cycle.votingCloses : cycle.nominationCloses}
                       className="mt-2 text-sm text-[var(--text-3)]"
                     />
-                    <div className="mt-4">
+                    <div className="mt-4 flex flex-wrap items-center gap-2">
                       {cycle.hasVotedAllPositions ? (
                         <div className="inline-flex items-center gap-2 rounded-[var(--r-md)] border border-[var(--navy-100)] bg-[var(--navy-50)] px-3 py-2 text-sm text-[var(--navy-700)]">
                           <CheckCircle2 className="size-4" />
@@ -79,6 +79,11 @@ export default async function VotingHubPage() {
                           <Link href={`/voting/elections/${cycle.id}`}>{ctaLabel}</Link>
                         </Button>
                       )}
+                      <Button asChild variant="outline" size="sm">
+                        <Link href={`/voting/elections/${cycle.id}/candidates`}>
+                          <Users className="size-4" /> Candidates
+                        </Link>
+                      </Button>
                     </div>
                   </div>
                 );
