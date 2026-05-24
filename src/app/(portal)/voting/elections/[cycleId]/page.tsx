@@ -77,12 +77,16 @@ export default async function ElectionCyclePage({ params }: PageProps) {
               </Link>
             </Button>
             {data.cycle.resultsPublished ||
+            data.cycle.status === "voting_open" ||
             data.cycle.status === "voting_closed" ||
             data.cycle.status === "results_published" ||
             isAdminUserRole((session.user as { role?: string }).role) ? (
               <Button asChild variant="navy" size="sm">
                 <Link href={`/voting/results/${data.cycle.id}`}>
-                  <Award className="size-4" /> Results
+                  <Award className="size-4" />{" "}
+                  {data.cycle.status === "voting_open" && !data.cycle.resultsPublished
+                    ? "Live results"
+                    : "Results"}
                 </Link>
               </Button>
             ) : null}

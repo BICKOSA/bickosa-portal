@@ -10,6 +10,10 @@ import { auth } from "@/lib/auth/auth";
 import { isAdminUserRole } from "@/lib/auth/roles";
 import { getElectionResultsPageData } from "@/lib/voting";
 
+// Live tally page — refresh on the server every 15 seconds so members watching
+// during voting_open see updated counts without manual reloads.
+export const revalidate = 15;
+
 type PageProps = {
   params: Promise<{ cycleId: string }>;
 };
@@ -39,10 +43,15 @@ export default async function ElectionResultsPage({ params }: PageProps) {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <CardTitle>{data.cycle.title} — Results</CardTitle>
             <div className="flex flex-wrap items-center gap-2">
-              {data.isAdminPreview ? (
-                <Badge variant="warning">Admin preview</Badge>
-              ) : (
+              {data.phase === "published" ? (
                 <Badge variant="success">Published</Badge>
+              ) : data.phase === "live" ? (
+                <Badge variant="gold">
+                  <span className="inline-block size-1.5 animate-pulse rounded-full bg-[var(--error)]" />{" "}
+                  Live
+                </Badge>
+              ) : (
+                <Badge variant="warning">Final tally · unpublished</Badge>
               )}
             </div>
           </div>
@@ -51,10 +60,15 @@ export default async function ElectionResultsPage({ params }: PageProps) {
             {data.eligibleCount.toLocaleString()} eligible members voted (
             {data.turnoutPercent}%)
           </p>
-          {data.isAdminPreview ? (
+          {data.phase === "live" ? (
             <p className="rounded-[var(--r-md)] border border-[var(--gold-300)] bg-[var(--gold-50)] px-3 py-2 text-xs text-[var(--gold-800)]">
-              These results aren&apos;t public yet. Publish from the admin
-              elections dashboard to share with members.
+              Voting is still open — counts update every few seconds. These
+              numbers may change before voting closes.
+            </p>
+          ) : data.phase === "final_unpublished" ? (
+            <p className="rounded-[var(--r-md)] border border-[var(--gold-300)] bg-[var(--gold-50)] px-3 py-2 text-xs text-[var(--gold-800)]">
+              Voting has closed and admins are reviewing before publishing the
+              official record.
             </p>
           ) : null}
           <div className="flex flex-wrap gap-2 pt-2">

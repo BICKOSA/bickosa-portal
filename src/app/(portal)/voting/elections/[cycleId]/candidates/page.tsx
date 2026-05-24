@@ -56,6 +56,8 @@ export default async function ElectionCandidatesPage({ params }: PageProps) {
     data.cycle.status === "voting_closed" ||
     data.cycle.status === "results_published";
   const canCastBallot = data.cycle.status === "voting_open";
+  // Live tallies are public to all members during voting_open as well.
+  const showResultsButton = isVotingOpen || cycleClosed || isAdmin;
 
   return (
     <section className="space-y-5">
@@ -107,10 +109,11 @@ export default async function ElectionCandidatesPage({ params }: PageProps) {
                 </Link>
               </Button>
             ) : null}
-            {cycleClosed || isAdmin ? (
+            {showResultsButton ? (
               <Button asChild variant="navy" size="sm">
                 <Link href={`/voting/results/${data.cycle.id}`}>
-                  <Award className="size-4" /> View results
+                  <Award className="size-4" />{" "}
+                  {isVotingOpen ? "Live results" : "View results"}
                 </Link>
               </Button>
             ) : null}

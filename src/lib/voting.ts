@@ -274,13 +274,15 @@ export async function getElectionResultsPageData(
     return null;
   }
 
-  // Admins can preview before publish; members see results only once they are
-  // published OR the cycle has formally closed voting.
-  const canViewResults =
-    cycle.resultsPublished ||
-    cycle.status === "results_published" ||
+  // Results are open to all members as soon as voting begins — live tallies
+  // update in real time. Pre-voting cycles (draft, nominations open/closed)
+  // are still gated to admins so we don't leak stage data.
+  const liveOrFinal =
+    cycle.status === "voting_open" ||
     cycle.status === "voting_closed" ||
-    options?.isAdmin === true;
+    cycle.status === "results_published" ||
+    cycle.resultsPublished;
+  const canViewResults = liveOrFinal || options?.isAdmin === true;
 
   if (!canViewResults) {
     return null;
@@ -352,6 +354,12 @@ export async function getElectionResultsPageData(
   const eligibleCount = eligibleCountRow[0]?.value ?? 0;
   const turnoutCount = turnoutRow[0]?.value ?? 0;
 
+  const phase: "live" | "final_unpublished" | "published" = cycle.resultsPublished
+    ? "published"
+    : cycle.status === "voting_open"
+      ? "live"
+      : "final_unpublished";
+
   return {
     cycle,
     positions,
@@ -359,6 +367,7 @@ export async function getElectionResultsPageData(
     eligibleCount,
     turnoutPercent: eligibleCount > 0 ? Number(((turnoutCount / eligibleCount) * 100).toFixed(2)) : 0,
     isAdminPreview: !cycle.resultsPublished,
+    phase,
   };
 }
 
