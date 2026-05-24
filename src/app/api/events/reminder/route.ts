@@ -14,6 +14,7 @@ type ReminderPayload = {
 };
 
 const DATE_FORMATTER = new Intl.DateTimeFormat("en-UG", {
+  timeZone: "Africa/Kampala",
   weekday: "long",
   day: "2-digit",
   month: "long",
@@ -21,6 +22,7 @@ const DATE_FORMATTER = new Intl.DateTimeFormat("en-UG", {
 });
 
 const TIME_FORMATTER = new Intl.DateTimeFormat("en-UG", {
+  timeZone: "Africa/Kampala",
   hour: "2-digit",
   minute: "2-digit",
 });

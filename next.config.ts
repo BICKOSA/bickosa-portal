@@ -1,5 +1,15 @@
 import type { NextConfig } from "next";
 
+// Pin the Node runtime timezone to East Africa Time so every server render,
+// API route, server action, and cron job formats dates in EAT regardless of
+// the host machine's locale. Set as early as possible — before any Date or
+// Intl.DateTimeFormat calls happen elsewhere in the bundle. Vercel should
+// also have TZ=Africa/Kampala set as a Project Environment Variable so
+// container startup matches.
+if (!process.env.TZ) {
+  process.env.TZ = "Africa/Kampala";
+}
+
 function getR2RemotePatterns(): NonNullable<NextConfig["images"]>["remotePatterns"] {
   const configuredUrl = process.env.R2_PUBLIC_URL;
   if (!configuredUrl) {

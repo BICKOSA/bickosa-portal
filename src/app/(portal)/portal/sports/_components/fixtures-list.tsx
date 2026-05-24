@@ -10,6 +10,7 @@ type FixturesListProps = {
 };
 
 const DATE_TIME_FORMATTER = new Intl.DateTimeFormat("en-UG", {
+  timeZone: "Africa/Kampala",
   day: "2-digit",
   month: "short",
   year: "numeric",

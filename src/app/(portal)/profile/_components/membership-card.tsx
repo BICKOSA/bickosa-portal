@@ -33,7 +33,7 @@ function getMembershipStatus(membershipExpiresAt: string | null): {
 
   return {
     status: renewalDate > new Date() ? "Active" : "Expired",
-    renewalDate: renewalDate.toLocaleDateString("en-UG", {
+    renewalDate: renewalDate.toLocaleDateString("en-UG", { timeZone: "Africa/Kampala", 
       year: "numeric",
       month: "short",
       day: "numeric",

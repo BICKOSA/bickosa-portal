@@ -55,7 +55,9 @@ function addMonths(value: Date, months: number): Date {
 }
 
 function getMonthLabel(date: Date): string {
-  return new Intl.DateTimeFormat("en-UG", { month: "short" }).format(date);
+  return new Intl.DateTimeFormat("en-UG", {
+  timeZone: "Africa/Kampala",
+  month: "short" }).format(date);
 }
 
 function getMonthKey(date: Date): string {

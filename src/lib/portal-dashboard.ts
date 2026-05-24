@@ -829,6 +829,7 @@ export type MonthlyHighlights = {
 };
 
 const MONTH_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  timeZone: "Africa/Kampala",
   month: "long",
   year: "numeric",
 });

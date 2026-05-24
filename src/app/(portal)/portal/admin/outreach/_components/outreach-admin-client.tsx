@@ -320,7 +320,7 @@ export function OutreachAdminClient({
                   <td className="px-2 py-2">{group.memberCount ?? "-"}</td>
                   <td className="px-2 py-2">
                     {group.lastOutreachAt
-                      ? new Date(group.lastOutreachAt).toLocaleString()
+                      ? new Date(group.lastOutreachAt).toLocaleString("en-GB", { timeZone: "Africa/Kampala" })
                       : "Never"}
                   </td>
                   <td className="flex flex-wrap gap-2 px-2 py-2">

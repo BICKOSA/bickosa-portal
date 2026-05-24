@@ -28,6 +28,7 @@ function formatUgx(amount: bigint): string {
 
 function formatDonationDate(value: Date): string {
   return new Intl.DateTimeFormat("en-UG", {
+    timeZone: "Africa/Kampala",
     day: "2-digit",
     month: "short",
     year: "numeric",

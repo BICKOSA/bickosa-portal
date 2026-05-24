@@ -18,6 +18,7 @@ type EventDetailPageProps = {
 };
 
 const DATE_TIME_FORMATTER = new Intl.DateTimeFormat("en-UG", {
+  timeZone: "Africa/Kampala",
   weekday: "long",
   day: "2-digit",
   month: "long",
@@ -27,6 +28,7 @@ const DATE_TIME_FORMATTER = new Intl.DateTimeFormat("en-UG", {
 });
 
 const DEADLINE_FORMATTER = new Intl.DateTimeFormat("en-UG", {
+  timeZone: "Africa/Kampala",
   day: "2-digit",
   month: "short",
   year: "numeric",

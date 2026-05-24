@@ -306,7 +306,7 @@ export function ConstitutionAdminClient(props: {
                   <option value="">Select AGM event for petition</option>
                   {props.agmEvents.map((event) => (
                     <option key={event.id} value={event.id}>
-                      {event.title} ({new Date(event.startAt).toLocaleDateString()})
+                      {event.title} ({new Date(event.startAt).toLocaleDateString(undefined, { timeZone: "Africa/Kampala" })})
                     </option>
                   ))}
                 </select>

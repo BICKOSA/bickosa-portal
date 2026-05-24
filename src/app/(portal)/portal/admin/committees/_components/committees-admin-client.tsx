@@ -127,6 +127,7 @@ function toDateTimeLocal(value: Date | string): string {
 
 function formatDate(value: Date | string): string {
   return new Intl.DateTimeFormat("en-UG", {
+    timeZone: "Africa/Kampala",
     day: "2-digit",
     month: "short",
     year: "numeric",

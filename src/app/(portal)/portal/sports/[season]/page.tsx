@@ -11,6 +11,7 @@ import { auth } from "@/lib/auth/auth";
 import { getSportsSeasonDetailData } from "@/lib/sports";
 
 const DATE_FORMATTER = new Intl.DateTimeFormat("en-UG", {
+  timeZone: "Africa/Kampala",
   day: "2-digit",
   month: "short",
   year: "numeric",

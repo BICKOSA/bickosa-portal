@@ -228,7 +228,9 @@ async function notifyAdminsOfPendingJob(input: {
   }
 
   const expiryText = input.expiresAt
-    ? `Expires ${new Intl.DateTimeFormat("en-UG", { dateStyle: "medium" }).format(input.expiresAt)}.`
+    ? `Expires ${new Intl.DateTimeFormat("en-UG", {
+  timeZone: "Africa/Kampala",
+  dateStyle: "medium" }).format(input.expiresAt)}.`
     : "No expiry date provided.";
 
   await db.insert(notifications).values(

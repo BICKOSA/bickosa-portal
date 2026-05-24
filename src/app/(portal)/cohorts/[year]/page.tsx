@@ -88,7 +88,7 @@ export default async function CohortYearPage({ params }: PageProps) {
           <ul className="mt-3 space-y-2 text-sm text-[var(--text-2)]">
             {data.recentEvents.map((event) => (
               <li key={event.id}>
-                {event.title} · {new Date(event.startAt).toLocaleDateString()}
+                {event.title} · {new Date(event.startAt).toLocaleDateString(undefined, { timeZone: "Africa/Kampala" })}
               </li>
             ))}
           </ul>
@@ -101,7 +101,7 @@ export default async function CohortYearPage({ params }: PageProps) {
             {data.recentDonations.map((donation) => (
               <li key={donation.id}>
                 Contribution made ·{" "}
-                {new Date(donation.createdAt).toLocaleDateString()}
+                {new Date(donation.createdAt).toLocaleDateString(undefined, { timeZone: "Africa/Kampala" })}
               </li>
             ))}
           </ul>

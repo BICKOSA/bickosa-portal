@@ -3,10 +3,9 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { format } from "date-fns";
-
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
+import { formatDateTime } from "@/lib/datetime";
 
 type RegistrationRow = {
   id: string;
@@ -244,7 +243,7 @@ export function RegistrationsAdminClient({ rows }: Props) {
                     {row.graduationYear}
                   </td>
                   <td className="px-3 py-2 text-[var(--text-2)]">
-                    {format(new Date(row.createdAt), "PPp")}
+                    {formatDateTime(row.createdAt)}
                   </td>
                   <td className="px-3 py-2">
                     <span className="rounded-full bg-[var(--navy-50)] px-2 py-1 text-xs text-[var(--navy-700)]">

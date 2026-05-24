@@ -388,9 +388,9 @@ export function ElectionsAdminClient(props: {
                   <Badge variant={statusBadgeVariant(cycle.status)}>{statusLabel(cycle.status)}</Badge>
                 </div>
                 <p className="mt-1 text-xs text-(--text-3)">
-                  Nomination: {new Date(cycle.nominationOpens).toLocaleDateString()} -{" "}
-                  {new Date(cycle.nominationCloses).toLocaleDateString()} · Voting:{" "}
-                  {new Date(cycle.votingOpens).toLocaleDateString()} - {new Date(cycle.votingCloses).toLocaleDateString()}
+                  Nomination: {new Date(cycle.nominationOpens).toLocaleDateString(undefined, { timeZone: "Africa/Kampala" })} -{" "}
+                  {new Date(cycle.nominationCloses).toLocaleDateString(undefined, { timeZone: "Africa/Kampala" })} · Voting:{" "}
+                  {new Date(cycle.votingOpens).toLocaleDateString(undefined, { timeZone: "Africa/Kampala" })} - {new Date(cycle.votingCloses).toLocaleDateString(undefined, { timeZone: "Africa/Kampala" })}
                 </p>
               </button>
             ))}
@@ -432,7 +432,7 @@ export function ElectionsAdminClient(props: {
                   </div>
                 </div>
                 <p className="mt-1 text-xs text-(--text-3)">
-                  Submitted: {new Date(nomination.createdAt).toLocaleString()}
+                  Submitted: {new Date(nomination.createdAt).toLocaleString("en-GB", { timeZone: "Africa/Kampala" })}
                   {nomination.isOffPlatform ? (
                     <>
                       {" · "}
@@ -440,7 +440,7 @@ export function ElectionsAdminClient(props: {
                       {nomination.nomineeEmail && nomination.nomineePhone ? " · " : null}
                       {nomination.nomineePhone ? `Phone: ${nomination.nomineePhone}` : null}
                       {nomination.nomineeGraduationYear ? ` · Class of ${nomination.nomineeGraduationYear}` : null}
-                      {nomination.inviteSentAt ? ` · Invite sent ${new Date(nomination.inviteSentAt).toLocaleDateString()}` : ""}
+                      {nomination.inviteSentAt ? ` · Invite sent ${new Date(nomination.inviteSentAt).toLocaleDateString(undefined, { timeZone: "Africa/Kampala" })}` : ""}
                     </>
                   ) : null}
                 </p>

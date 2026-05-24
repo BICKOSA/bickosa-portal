@@ -302,7 +302,7 @@ export function SchoolRecordsAdminClient({ batches, records }: Props) {
                 >
                   <td className="px-2 py-1">{batch.sourceFile}</td>
                   <td className="px-2 py-1">
-                    {batch.uploadedAt.toLocaleString()}
+                    {batch.uploadedAt.toLocaleString("en-GB", { timeZone: "Africa/Kampala" })}
                   </td>
                   <td className="px-2 py-1">{batch.rowCount}</td>
                   <td className="px-2 py-1">{batch.uploadedBy ?? "Unknown"}</td>

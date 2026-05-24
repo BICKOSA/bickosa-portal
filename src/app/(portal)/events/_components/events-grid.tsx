@@ -13,10 +13,12 @@ type EventsGridProps = {
 };
 
 const MONTH_FORMATTER = new Intl.DateTimeFormat("en-GB", {
+  timeZone: "Africa/Kampala",
   month: "short",
 });
 
 const DATE_TIME_FORMATTER = new Intl.DateTimeFormat("en-UG", {
+  timeZone: "Africa/Kampala",
   weekday: "short",
   day: "2-digit",
   month: "short",

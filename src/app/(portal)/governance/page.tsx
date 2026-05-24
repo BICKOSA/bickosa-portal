@@ -182,7 +182,7 @@ export default async function GovernancePage() {
               <p className="text-sm text-(--gold-800)">
                 <span className="font-semibold">{upcomingElection.title}</span> is currently open -{" "}
                 {upcomingElection.status === "nominations_open" ? "Nominations" : "Voting"} close on{" "}
-                {upcomingElection.closesAt.toLocaleDateString("en-UG", {
+                {upcomingElection.closesAt.toLocaleDateString("en-UG", { timeZone: "Africa/Kampala", 
                   day: "2-digit",
                   month: "short",
                   year: "numeric",

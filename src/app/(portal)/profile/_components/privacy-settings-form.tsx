@@ -163,7 +163,7 @@ export function PrivacySettingsForm({
             {recentLogs.map((log) => (
               <p key={log.id} className="text-xs text-[var(--text-3)]">
                 {log.consentType} set to {log.granted ? "enabled" : "disabled"} on{" "}
-                {new Date(log.createdAt).toLocaleDateString("en-UG")}
+                {new Date(log.createdAt).toLocaleDateString("en-UG", { timeZone: "Africa/Kampala" })}
               </p>
             ))}
           </div>

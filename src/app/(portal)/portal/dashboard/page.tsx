@@ -483,12 +483,14 @@ function ActivityItem({
 }
 
 const DATE_FORMATTER = new Intl.DateTimeFormat("en-GB", {
+  timeZone: "Africa/Kampala",
   weekday: "short",
   day: "numeric",
   month: "short",
 });
 
 const TIME_FORMATTER = new Intl.DateTimeFormat("en-GB", {
+  timeZone: "Africa/Kampala",
   hour: "numeric",
   minute: "2-digit",
 });
@@ -573,7 +575,7 @@ function MonthlyHighlightsSection({
                   >
                     <span className="mt-0.5 inline-flex size-9 shrink-0 flex-col items-center justify-center rounded-(--r-md) bg-(--navy-50) text-(--navy-700)">
                       <span className="text-[10px] leading-none uppercase">
-                        {ev.startAt.toLocaleString("en-US", { month: "short" })}
+                        {ev.startAt.toLocaleString("en-US", { timeZone: "Africa/Kampala", month: "short" })}
                       </span>
                       <span className="text-sm font-semibold leading-none">
                         {ev.startAt.getDate()}

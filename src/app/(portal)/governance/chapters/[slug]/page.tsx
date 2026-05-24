@@ -62,7 +62,9 @@ export default async function ChapterDetailsPage({ params }: ChapterDetailsPageP
                 <div key={event.id} className="rounded-(--r-lg) border border-(--border) p-3">
                   <p className="text-sm font-semibold text-(--text-1)">{event.title}</p>
                   <p className="mt-1 text-xs text-(--text-3)">
-                    {new Intl.DateTimeFormat("en-UG", { dateStyle: "medium", timeStyle: "short" }).format(
+                    {new Intl.DateTimeFormat("en-UG", {
+  timeZone: "Africa/Kampala",
+  dateStyle: "medium", timeStyle: "short" }).format(
                       event.startAt,
                     )}
                     {event.locationName ? ` · ${event.locationName}` : event.isOnline ? " · Online" : ""}

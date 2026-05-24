@@ -178,7 +178,7 @@ export function CommitteeNominationsDashboardClient(props: {
                   </p>
                 </td>
                 <td className="px-3 py-2">{row.nominatedByName}</td>
-                <td className="px-3 py-2 text-xs text-(--text-3)">{new Date(row.createdAt).toLocaleString()}</td>
+                <td className="px-3 py-2 text-xs text-(--text-3)">{new Date(row.createdAt).toLocaleString("en-GB", { timeZone: "Africa/Kampala" })}</td>
                 <td className="max-w-[420px] px-3 py-2 text-(--text-2)">{row.reason ?? "-"}</td>
                 <td className="px-3 py-2">
                   <Badge variant={nominationStatusVariant(row.status)}>{row.status}</Badge>
