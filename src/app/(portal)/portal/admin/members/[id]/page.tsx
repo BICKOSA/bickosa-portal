@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { MemberRoleActions } from "@/app/(portal)/portal/admin/members/_components/member-role-actions";
 import { MemberVerificationActions } from "@/app/(portal)/portal/admin/members/_components/member-verification-actions";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -66,7 +67,7 @@ function DetailItem({
 export default async function AdminMemberDetailsPage({
   params,
 }: AdminMemberDetailsPageProps) {
-  await requireAdminPageSession();
+  const session = await requireAdminPageSession();
   const { id } = await params;
 
   const [member, chapterOptions] = await Promise.all([
@@ -78,6 +79,8 @@ export default async function AdminMemberDetailsPage({
     notFound();
   }
 
+  const isSelf = session.user.id === member.userId;
+
   return (
     <section className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -88,7 +91,12 @@ export default async function AdminMemberDetailsPage({
               {member.fullName}
             </h2>
             <p className="text-sm text-[var(--text-3)]">{member.email}</p>
-            <div className="mt-1">{renderStatus(member.status)}</div>
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              {renderStatus(member.status)}
+              {member.role === "admin" ? (
+                <Badge variant="gold">Admin</Badge>
+              ) : null}
+            </div>
           </div>
         </div>
         <Button asChild variant="outline">
@@ -325,6 +333,20 @@ export default async function AdminMemberDetailsPage({
         </div>
 
         <div className="space-y-4">
+          <Card variant="navy-tint" accentBar>
+            <CardHeader>
+              <CardTitle>Role Management</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <MemberRoleActions
+                userId={member.userId}
+                fullName={member.fullName}
+                currentRole={member.role}
+                isSelf={isSelf}
+              />
+            </CardContent>
+          </Card>
+
           <Card variant="navy-tint" accentBar>
             <CardHeader>
               <CardTitle>Verification Actions</CardTitle>

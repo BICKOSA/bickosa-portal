@@ -67,6 +67,7 @@ export type AdminMemberRow = {
   email: string;
   chapterName: string | null;
   status: VerificationStatus;
+  role: "member" | "admin";
   joinedAt: Date;
 };
 
@@ -130,6 +131,7 @@ export type AdminMemberProfileDetail = {
   fullName: string;
   email: string;
   avatarUrl: string | null;
+  role: "member" | "admin";
   status: VerificationStatus;
   verifiedAt: Date | null;
   verifiedById: string | null;
@@ -317,6 +319,7 @@ export async function listAdminMembers(
         avatarKey: alumniProfiles.avatarKey,
         classYear: alumniProfiles.yearOfCompletion,
         email: users.email,
+        role: users.role,
         chapterName: chapters.name,
         status: alumniProfiles.verificationStatus,
         joinedAt: users.createdAt,
@@ -348,6 +351,7 @@ export async function listAdminMembers(
       email: row.email,
       chapterName: row.chapterName,
       status: row.status,
+      role: row.role === "admin" ? "admin" : "member",
       joinedAt: row.joinedAt,
     })),
     total,
@@ -380,6 +384,7 @@ export async function getAdminMemberProfileDetail(
       firstName: alumniProfiles.firstName,
       lastName: alumniProfiles.lastName,
       email: users.email,
+      role: users.role,
       avatarKey: alumniProfiles.avatarKey,
       status: alumniProfiles.verificationStatus,
       verifiedAt: alumniProfiles.verifiedAt,
@@ -486,6 +491,7 @@ export async function getAdminMemberProfileDetail(
     fullName: `${profile.firstName} ${profile.lastName}`.trim(),
     email: profile.email,
     avatarUrl: profile.avatarKey ? buildR2PublicUrl(profile.avatarKey) : null,
+    role: profile.role === "admin" ? "admin" : "member",
     status: profile.status,
     verifiedAt: profile.verifiedAt,
     verifiedById: profile.verifiedById,
@@ -711,4 +717,53 @@ export async function verifyMemberProfilesBulk(input: {
   }
 
   return { processed };
+}
+
+export type SetUserRoleInput = {
+  targetUserId: string;
+  actorUserId: string;
+  nextRole: "member" | "admin";
+};
+
+export type SetUserRoleResult =
+  | { ok: true; previousRole: "member" | "admin"; nextRole: "member" | "admin" }
+  | { ok: false; message: string };
+
+/**
+ * Promote a user to admin or demote them back to member. Self-demotion is
+ * blocked to avoid an admin locking themselves out by accident.
+ */
+export async function setUserRole(input: SetUserRoleInput): Promise<SetUserRoleResult> {
+  if (input.nextRole !== "admin" && input.nextRole !== "member") {
+    return { ok: false, message: "Role must be member or admin." };
+  }
+
+  const [target] = await db
+    .select({ id: users.id, role: users.role })
+    .from(users)
+    .where(eq(users.id, input.targetUserId))
+    .limit(1);
+
+  if (!target) {
+    return { ok: false, message: "User not found." };
+  }
+
+  const previousRole = target.role === "admin" ? "admin" : "member";
+  if (previousRole === input.nextRole) {
+    return { ok: false, message: `User is already ${input.nextRole}.` };
+  }
+
+  if (target.id === input.actorUserId && input.nextRole === "member") {
+    return {
+      ok: false,
+      message: "You can't demote yourself. Ask another admin.",
+    };
+  }
+
+  await db
+    .update(users)
+    .set({ role: input.nextRole, updatedAt: new Date() })
+    .where(eq(users.id, target.id));
+
+  return { ok: true, previousRole, nextRole: input.nextRole };
 }

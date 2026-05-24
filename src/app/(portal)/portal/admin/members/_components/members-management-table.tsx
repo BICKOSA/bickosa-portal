@@ -267,6 +267,7 @@ export function MembersManagementTable({
                   </SortLabel>
                 </Link>
               </TableHead>
+              <TableHead>Role</TableHead>
               <TableHead>
                 <Link href={sortLinks.joinedAt}>
                   <SortLabel active={sortBy === "joinedAt"} direction={sortDir}>
@@ -296,6 +297,13 @@ export function MembersManagementTable({
                 <TableCell>{row.chapterName ?? "Unassigned"}</TableCell>
                 <TableCell>
                   <StatusBadge status={row.status} />
+                </TableCell>
+                <TableCell>
+                  {row.role === "admin" ? (
+                    <Badge variant="gold">Admin</Badge>
+                  ) : (
+                    <span className="text-xs text-[var(--text-3)]">Member</span>
+                  )}
                 </TableCell>
                 <TableCell>{DATE_FORMATTER.format(row.joinedAt)}</TableCell>
                 <TableCell>
