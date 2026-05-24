@@ -479,3 +479,111 @@ export async function getElectionResultsForAdmin(cycleId: string) {
   `);
   return rows.rows;
 }
+
+export type NominationsExportRow = {
+  nominationId: string;
+  cycleId: string;
+  cycleTitle: string;
+  positionTitle: string;
+  nomineeName: string;
+  nomineeEmail: string | null;
+  nomineePhone: string | null;
+  nomineeGraduationYear: number | null;
+  isOffPlatform: boolean;
+  nominatedByName: string | null;
+  nominatedByEmail: string | null;
+  status: "pending" | "approved" | "rejected" | "withdrawn";
+  inviteSentAt: Date | null;
+  manifesto: string | null;
+  reviewNote: string | null;
+  createdAt: Date;
+};
+
+export async function getNominationsExportRows(
+  cycleId?: string | null,
+): Promise<NominationsExportRow[]> {
+  const clauses = [];
+  if (cycleId) clauses.push(eq(nominations.electionCycleId, cycleId));
+
+  const rows = await db
+    .select({
+      nominationId: nominations.id,
+      cycleId: nominations.electionCycleId,
+      cycleTitle: electionCycles.title,
+      positionTitle: electionPositions.title,
+      nomineeId: nominations.nomineeId,
+      nomineeUserName: users.name,
+      nomineeUserEmail: users.email,
+      offPlatformName: nominations.nomineeName,
+      offPlatformEmail: nominations.nomineeEmail,
+      offPlatformPhone: nominations.nomineePhone,
+      offPlatformGraduationYear: nominations.nomineeGraduationYear,
+      inviteSentAt: nominations.inviteSentAt,
+      nominatedById: nominations.nominatedById,
+      status: nominations.status,
+      manifesto: nominations.manifesto,
+      reviewNote: nominations.reviewNote,
+      createdAt: nominations.createdAt,
+    })
+    .from(nominations)
+    .leftJoin(users, eq(users.id, nominations.nomineeId))
+    .innerJoin(
+      electionPositions,
+      eq(electionPositions.id, nominations.positionId),
+    )
+    .innerJoin(
+      electionCycles,
+      eq(electionCycles.id, nominations.electionCycleId),
+    )
+    .where(clauses.length > 0 ? and(...clauses) : undefined)
+    .orderBy(
+      asc(electionCycles.title),
+      asc(electionPositions.title),
+      desc(nominations.createdAt),
+    );
+
+  const nominatorIds = Array.from(
+    new Set(rows.map((row) => row.nominatedById).filter(Boolean)),
+  );
+  const nominatorMap = new Map<string, { name: string; email: string }>();
+  if (nominatorIds.length > 0) {
+    const nominatorRows = await db
+      .select({ id: users.id, name: users.name, email: users.email })
+      .from(users)
+      .where(inArray(users.id, nominatorIds));
+    for (const nominator of nominatorRows) {
+      nominatorMap.set(nominator.id, {
+        name: nominator.name,
+        email: nominator.email,
+      });
+    }
+  }
+
+  return rows.map((row) => {
+    const isOffPlatform = row.nomineeId === null;
+    const nominator = row.nominatedById
+      ? nominatorMap.get(row.nominatedById) ?? null
+      : null;
+    return {
+      nominationId: row.nominationId,
+      cycleId: row.cycleId,
+      cycleTitle: row.cycleTitle,
+      positionTitle: row.positionTitle,
+      nomineeName:
+        (isOffPlatform ? row.offPlatformName : row.nomineeUserName) ??
+        row.offPlatformName ??
+        "Unknown nominee",
+      nomineeEmail: row.nomineeUserEmail ?? row.offPlatformEmail ?? null,
+      nomineePhone: row.offPlatformPhone,
+      nomineeGraduationYear: row.offPlatformGraduationYear,
+      isOffPlatform,
+      nominatedByName: nominator?.name ?? null,
+      nominatedByEmail: nominator?.email ?? null,
+      status: row.status,
+      inviteSentAt: row.inviteSentAt,
+      manifesto: row.manifesto,
+      reviewNote: row.reviewNote,
+      createdAt: row.createdAt,
+    };
+  });
+}

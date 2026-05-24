@@ -399,10 +399,34 @@ export function ElectionsAdminClient(props: {
       </TabsContent>
 
       <TabsContent value="nominations" className="space-y-4">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => void bulkApprove()} disabled={selectedNominationIds.length === 0}>
             Bulk approve selected
           </Button>
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <p className="text-xs text-(--text-3)">
+              Export {selectedCycle?.title ?? "all cycles"} ·
+            </p>
+            <Button asChild variant="outline" size="sm">
+              <a
+                href={`/api/admin/elections/${selectedCycle?.id ?? "all"}/nominations/export?format=csv`}
+              >
+                CSV
+              </a>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <a
+                href={`/api/admin/elections/${selectedCycle?.id ?? "all"}/nominations/export?format=pdf`}
+              >
+                PDF
+              </a>
+            </Button>
+            <Button asChild variant="ghost" size="sm">
+              <a href="/api/admin/elections/all/nominations/export?format=csv">
+                All cycles CSV
+              </a>
+            </Button>
+          </div>
         </div>
         <div className="rounded-(--r-lg) border border-border bg-(--white) p-4">
           <div className="space-y-2">
