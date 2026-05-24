@@ -57,15 +57,20 @@ export default async function PortalLayout({ children }: PortalLayoutProps) {
     columns: { id: true, verificationStatus: true },
   });
 
+  // Anyone signed in without an alumni profile (typically social signups)
+  // needs to complete the onboarding form before they can use the portal,
+  // even via the gated/pending screens.
+  if (!profile && !isAdmin) {
+    redirect("/onboarding");
+  }
+
   const isVerified = profile?.verificationStatus === "verified";
   const needsGate = !isVerified && !isAdmin;
 
   let gatedContent: React.ReactNode = null;
 
   if (needsGate) {
-    if (!profile || profile.verificationStatus === "pending") {
-      gatedContent = <PendingVerificationPage />;
-    } else if (profile.verificationStatus === "rejected") {
+    if (profile?.verificationStatus === "rejected") {
       const latestRejection = await db.query.verificationEvents.findFirst({
         where: eq(verificationEvents.alumniProfileId, profile.id),
         orderBy: [desc(verificationEvents.createdAt)],
