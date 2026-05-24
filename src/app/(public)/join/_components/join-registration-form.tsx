@@ -11,35 +11,81 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 
+const PHONE_REGEX = /^\+?[0-9()\-\s]{7,20}$/;
+const LINKEDIN_URL_REGEX = /linkedin\.com\//i;
+
 const joinSchema = z
   .object({
-    fullName: z.string().trim().min(2, "Full name is required."),
-    email: z.email("Enter a valid email address."),
-    password: z.string().min(8, "Password must be at least 8 characters."),
-    confirmPassword: z.string().min(8, "Confirm your password."),
+    fullName: z
+      .string()
+      .trim()
+      .min(2, "Full name is required.")
+      .max(120, "Full name is too long.")
+      .refine(
+        (value) => value.split(/\s+/).filter(Boolean).length >= 2,
+        { message: "Please enter both your first and last name." },
+      ),
+    email: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .min(1, "Email is required.")
+      .max(255, "Email is too long.")
+      .pipe(z.email("Enter a valid email address.")),
+    password: z
+      .string()
+      .min(8, "Password must be at least 8 characters.")
+      .max(72, "Password must be 72 characters or fewer.")
+      .refine((value) => /[A-Za-z]/.test(value), {
+        message: "Include at least one letter.",
+      })
+      .refine((value) => /\d/.test(value), {
+        message: "Include at least one number.",
+      }),
+    confirmPassword: z.string().min(1, "Confirm your password."),
     phone: z
+      .string()
+      .trim()
+      .min(7, "Phone number is required.")
+      .max(20, "Phone number is too long.")
+      .regex(PHONE_REGEX, "Enter a valid phone number."),
+    graduationYear: z
+      .number({ error: "Choose your graduation year." })
+      .int()
+      .min(1999, "Choose your graduation year.")
+      .max(new Date().getFullYear() + 1, "Year cannot be in the future."),
+    stream: z.string().trim().max(120).optional(),
+    house: z.string().trim().max(120).optional(),
+    notableTeachers: z
+      .string()
+      .trim()
+      .min(3, "Name a teacher or classmate — helps us verify you.")
+      .max(500, "Please keep this under 500 characters."),
+    currentLocation: z
+      .string()
+      .trim()
+      .min(3, "Where are you based today? (City, country)")
+      .max(255, "Please keep this under 255 characters."),
+    occupation: z
+      .string()
+      .trim()
+      .min(2, "What do you currently do?")
+      .max(255, "Please keep this under 255 characters."),
+    linkedinUrl: z
       .union([
         z.literal(""),
         z
           .string()
           .trim()
-          .regex(/^\+?[0-9()\-\s]{7,20}$/, "Enter a valid phone number."),
+          .url("Enter a valid LinkedIn URL.")
+          .regex(LINKEDIN_URL_REGEX, "Use the URL to your LinkedIn profile (linkedin.com/…)"),
       ])
       .optional(),
-    graduationYear: z
-      .number()
-      .int()
-      .min(1999)
-      .max(new Date().getFullYear() + 1),
-    stream: z.string().trim().max(120).optional(),
-    house: z.string().trim().max(120).optional(),
-    notableTeachers: z.string().trim().max(500).optional(),
-    currentLocation: z.string().trim().max(255).optional(),
-    occupation: z.string().trim().max(255).optional(),
-    linkedinUrl: z
-      .union([z.literal(""), z.url("Enter a valid LinkedIn URL.")])
-      .optional(),
-    howTheyHeard: z.string().trim().max(255).optional(),
+    howTheyHeard: z
+      .string()
+      .trim()
+      .min(1, "Let us know how you heard about us.")
+      .max(255, "Please keep this under 255 characters."),
     consentDataProcessing: z.boolean(),
     consentPolicyAgreement: z.boolean(),
     consentDirectory: z.boolean(),
@@ -71,6 +117,18 @@ const hearOptions = [
 ];
 
 const steps = ["Identity & School", "About You & Consent"] as const;
+
+function RequiredLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      {children}
+      <span aria-hidden="true" className="ml-0.5 text-[var(--error)]">
+        *
+      </span>
+      <span className="sr-only"> (required)</span>
+    </>
+  );
+}
 
 export function JoinRegistrationForm() {
   const router = useRouter();
@@ -135,7 +193,9 @@ export function JoinRegistrationForm() {
       "email",
       "password",
       "confirmPassword",
+      "phone",
       "graduationYear",
+      "notableTeachers",
     ];
     const valid = await trigger(step1Fields, { shouldFocus: true });
     if (valid) {
@@ -151,16 +211,18 @@ export function JoinRegistrationForm() {
         ? `${window.location.origin}/verify-email?verified=true`
         : "/verify-email?verified=true";
 
-    const nameParts = values.fullName.trim().split(/\s+/);
+    const normalizedFullName = values.fullName.trim().replace(/\s+/g, " ");
+    const nameParts = normalizedFullName.split(" ");
     const firstName = nameParts[0] ?? "";
     const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
+    const normalizedEmail = values.email.trim().toLowerCase();
 
     const signUpResponse = await fetch("/api/auth/sign-up/email", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        name: values.fullName.trim(),
-        email: values.email,
+        name: normalizedFullName,
+        email: normalizedEmail,
         password: values.password,
         callbackURL,
         rememberMe: false,
@@ -171,7 +233,12 @@ export function JoinRegistrationForm() {
       const body = (await signUpResponse.json().catch(() => null)) as {
         message?: string;
       } | null;
-      setFormError(body?.message ?? "Failed to create account.");
+      const status = signUpResponse.status;
+      const fallback =
+        status === 409 || /exist|already/i.test(body?.message ?? "")
+          ? "An account with that email already exists. Try signing in instead."
+          : "Failed to create account. Please try again.";
+      setFormError(body?.message ?? fallback);
       return;
     }
 
@@ -179,18 +246,18 @@ export function JoinRegistrationForm() {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        email: values.email,
+        email: normalizedEmail,
         firstName,
         lastName,
         graduationYear: values.graduationYear,
         stream: values.stream || null,
         house: values.house || null,
-        notableTeachers: values.notableTeachers || null,
-        currentLocation: values.currentLocation || null,
-        occupation: values.occupation || null,
-        linkedinUrl: values.linkedinUrl || null,
-        howTheyHeard: referralCode || values.howTheyHeard || null,
-        phone: values.phone || null,
+        notableTeachers: values.notableTeachers.trim(),
+        currentLocation: values.currentLocation.trim(),
+        occupation: values.occupation.trim(),
+        linkedinUrl: values.linkedinUrl?.trim() || null,
+        howTheyHeard: referralCode || values.howTheyHeard,
+        phone: values.phone.trim(),
         ref: referralCode || undefined,
         consent: {
           dataProcessing: values.consentDataProcessing,
@@ -210,7 +277,7 @@ export function JoinRegistrationForm() {
     }
 
     router.push(
-      `/join/success?email=${encodeURIComponent(values.email)}${returnToQuery}`,
+      `/join/success?email=${encodeURIComponent(normalizedEmail)}${returnToQuery}`,
     );
   };
 
@@ -235,38 +302,49 @@ export function JoinRegistrationForm() {
         <>
           <div className="grid gap-3 md:grid-cols-2">
             <Input
-              label="Full name"
+              label={<RequiredLabel>Full name</RequiredLabel>}
+              autoComplete="name"
+              placeholder="e.g. Mary Nakato"
               {...register("fullName")}
               error={errors.fullName?.message}
+              helperText="First and last name as on your records."
             />
             <Input
-              label="Email"
+              label={<RequiredLabel>Email</RequiredLabel>}
               type="email"
               autoComplete="email"
               {...register("email")}
               error={errors.email?.message}
+              helperText="Used to sign in and recover your account."
             />
             <Input
-              label="Password"
+              label={<RequiredLabel>Password</RequiredLabel>}
               type="password"
               autoComplete="new-password"
               {...register("password")}
               error={errors.password?.message}
+              helperText="At least 8 characters, including a letter and a number."
             />
             <Input
-              label="Confirm password"
+              label={<RequiredLabel>Confirm password</RequiredLabel>}
               type="password"
               autoComplete="new-password"
               {...register("confirmPassword")}
               error={errors.confirmPassword?.message}
             />
             <Input
-              label="Phone (optional)"
+              label={<RequiredLabel>Phone</RequiredLabel>}
+              type="tel"
+              autoComplete="tel"
+              placeholder="e.g. +256 772 000 000"
               {...register("phone")}
               error={errors.phone?.message}
+              helperText="So chapter leads can reach you. Include the country code if not in Uganda."
             />
             <label className="flex flex-col gap-1.5 text-sm font-medium text-[var(--text-1)]">
-              Graduation year
+              <span>
+                <RequiredLabel>Graduation year</RequiredLabel>
+              </span>
               <select
                 {...register("graduationYear", { valueAsNumber: true })}
                 className="h-10 rounded-[var(--r-md)] border-[1.5px] border-[var(--border)] bg-[var(--white)] px-3 text-sm text-[var(--text-1)] outline-none focus:border-[var(--navy-400)]"
@@ -277,11 +355,17 @@ export function JoinRegistrationForm() {
                   </option>
                 ))}
               </select>
+              {errors.graduationYear?.message ? (
+                <p className="text-xs text-[var(--error)]">
+                  {errors.graduationYear.message}
+                </p>
+              ) : null}
             </label>
             <Input
               label="Stream (optional)"
               {...register("stream")}
               error={errors.stream?.message}
+              helperText="e.g. Sciences, Arts."
             />
             <Input
               label="House (optional)"
@@ -291,13 +375,26 @@ export function JoinRegistrationForm() {
           </div>
 
           <label className="flex flex-col gap-1.5 text-sm font-medium text-[var(--text-1)]">
-            Name a teacher or classmate you remember
+            <span>
+              <RequiredLabel>Name a teacher or classmate you remember</RequiredLabel>
+            </span>
             <textarea
               {...register("notableTeachers")}
               rows={3}
-              className="rounded-[var(--r-md)] border-[1.5px] border-[var(--border)] bg-[var(--white)] px-3 py-2 text-sm text-[var(--text-1)] outline-none focus:border-[var(--navy-400)]"
+              className="rounded-[var(--r-md)] border-[1.5px] border-[var(--border)] bg-[var(--white)] px-3 py-2 text-sm text-[var(--text-1)] outline-none focus:border-[var(--navy-400)] aria-[invalid=true]:border-[var(--error)]"
+              aria-invalid={Boolean(errors.notableTeachers)}
               placeholder="This helps us verify school records."
             />
+            {errors.notableTeachers?.message ? (
+              <p className="text-xs text-[var(--error)]">
+                {errors.notableTeachers.message}
+              </p>
+            ) : (
+              <p className="text-xs text-[var(--text-3)]">
+                A teacher&apos;s name, a class prefect, a sports captain —
+                anything that helps us match your record.
+              </p>
+            )}
           </label>
         </>
       ) : null}
@@ -306,17 +403,34 @@ export function JoinRegistrationForm() {
         <>
           <div className="grid gap-3 md:grid-cols-2">
             <Input
-              label="Current location (optional)"
+              label={<RequiredLabel>Current location</RequiredLabel>}
+              autoComplete="address-level2"
+              placeholder="e.g. Kampala, Uganda"
               {...register("currentLocation")}
+              error={errors.currentLocation?.message}
+              helperText="City and country — used to assign you to a chapter."
             />
-            <Input label="Occupation (optional)" {...register("occupation")} />
+            <Input
+              label={<RequiredLabel>Occupation</RequiredLabel>}
+              autoComplete="organization-title"
+              placeholder="e.g. Software Engineer at Google"
+              {...register("occupation")}
+              error={errors.occupation?.message}
+              helperText="Title and employer help peers find and support each other."
+            />
             <Input
               label="LinkedIn (optional)"
+              type="url"
+              autoComplete="url"
+              placeholder="https://www.linkedin.com/in/your-name"
               {...register("linkedinUrl")}
               error={errors.linkedinUrl?.message}
+              helperText="Full URL — must contain linkedin.com."
             />
             <label className="flex flex-col gap-1.5 text-sm font-medium text-[var(--text-1)]">
-              How did you hear about us?
+              <span>
+                <RequiredLabel>How did you hear about us?</RequiredLabel>
+              </span>
               <select
                 {...register("howTheyHeard")}
                 className="h-10 rounded-[var(--r-md)] border-[1.5px] border-[var(--border)] bg-[var(--white)] px-3 text-sm text-[var(--text-1)] outline-none focus:border-[var(--navy-400)]"
@@ -327,6 +441,11 @@ export function JoinRegistrationForm() {
                   </option>
                 ))}
               </select>
+              {errors.howTheyHeard?.message ? (
+                <p className="text-xs text-[var(--error)]">
+                  {errors.howTheyHeard.message}
+                </p>
+              ) : null}
             </label>
           </div>
 

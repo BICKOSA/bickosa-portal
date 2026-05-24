@@ -12,21 +12,63 @@ import {
 } from "@/lib/db/schema";
 import { trackPortalEvent } from "@/lib/analytics/server";
 
+const PHONE_REGEX = /^\+?[0-9()\-\s]{7,20}$/;
+const LINKEDIN_URL_REGEX = /linkedin\.com\//i;
+
 const joinWithAccountSchema = z
   .object({
-    email: z.email(),
-    firstName: z.string().min(1),
-    lastName: z.string(),
-    graduationYear: z.coerce.number().int().min(1999),
-    stream: z.string().nullish(),
-    house: z.string().nullish(),
-    notableTeachers: z.string().nullish(),
-    currentLocation: z.string().nullish(),
-    occupation: z.string().nullish(),
-    linkedinUrl: z.string().nullish(),
-    howTheyHeard: z.string().nullish(),
-    phone: z.string().nullish(),
-    ref: z.string().optional(),
+    email: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .max(255)
+      .pipe(z.email("Enter a valid email address.")),
+    firstName: z.string().trim().min(1, "First name is required.").max(120),
+    lastName: z.string().trim().max(120),
+    graduationYear: z.coerce
+      .number()
+      .int()
+      .min(1999, "Choose your graduation year.")
+      .max(new Date().getFullYear() + 1, "Year cannot be in the future."),
+    stream: z.string().trim().max(120).nullish(),
+    house: z.string().trim().max(120).nullish(),
+    notableTeachers: z
+      .string()
+      .trim()
+      .min(3, "Notable teacher or classmate is required.")
+      .max(500),
+    currentLocation: z
+      .string()
+      .trim()
+      .min(3, "Current location is required.")
+      .max(255),
+    occupation: z
+      .string()
+      .trim()
+      .min(2, "Occupation is required.")
+      .max(255),
+    linkedinUrl: z
+      .union([
+        z.literal(""),
+        z
+          .string()
+          .trim()
+          .url("Enter a valid LinkedIn URL.")
+          .regex(LINKEDIN_URL_REGEX, "Use the URL to your LinkedIn profile."),
+      ])
+      .nullish(),
+    howTheyHeard: z
+      .string()
+      .trim()
+      .min(1, "Tell us how you heard about us.")
+      .max(255),
+    phone: z
+      .string()
+      .trim()
+      .min(7, "Phone number is required.")
+      .max(20)
+      .regex(PHONE_REGEX, "Enter a valid phone number."),
+    ref: z.string().trim().max(120).optional(),
     consent: z.object({
       dataProcessing: z.boolean(),
       policyAgreement: z.boolean(),
