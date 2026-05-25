@@ -172,12 +172,6 @@ function isProtectedPath(pathname: string): boolean {
   );
 }
 
-function shouldRewriteToPortal(pathname: string): boolean {
-  return PROTECTED_REWRITE_PREFIXES.some((prefix) =>
-    matchesPrefix(pathname, prefix),
-  );
-}
-
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -186,6 +180,8 @@ export async function proxy(request: NextRequest) {
     return rateLimitedResponse;
   }
 
+  // Back-compat: old /portal/* URLs (and legacy bookmarks) redirect to the
+  // flat route tree (e.g. /portal/dashboard -> /dashboard).
   if (matchesPrefix(pathname, "/portal")) {
     const redirectUrl = request.nextUrl.clone();
     const strippedPath = pathname.slice("/portal".length) || "/dashboard";
@@ -203,14 +199,6 @@ export async function proxy(request: NextRequest) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("returnTo", pathname);
     return NextResponse.redirect(loginUrl);
-  }
-
-  if (shouldRewriteToPortal(pathname)) {
-    const rewriteUrl = request.nextUrl.clone();
-    rewriteUrl.pathname = `/portal${pathname}`;
-    const response = NextResponse.rewrite(rewriteUrl);
-    response.headers.set("x-pathname", pathname);
-    return response;
   }
 
   return NextResponse.next();
